@@ -112,6 +112,11 @@ def compute_price_levels(data):
     hist = close.iloc[-252:] if len(close) >= 252 else close
     week_52_low = float(hist.min())
 
+    # day-over-day price change
+    price_change     = float(close.iloc[-1] - close.iloc[-2])
+    price_change_pct = float((close.iloc[-1] / close.iloc[-2] - 1) * 100)
+    price_date       = str(close.index[-1].date())
+
     # how many trading days ago did SMA50 cross above SMA150? (50-day lookback)
     window = 51  # 51 points → 50 consecutive pairs
     sma50_w  = sma50.iloc[-window:]
@@ -123,6 +128,9 @@ def compute_price_levels(data):
 
     return {
         "price_now":            price_now,
+        "price_change":         price_change,
+        "price_change_pct":     price_change_pct,
+        "price_date":           price_date,
         "sma50":                sma50_val,
         "sma150":               sma150_val,
         "price_vs_sma50_pct":   price_vs_sma50_pct,

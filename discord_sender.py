@@ -42,6 +42,17 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
     """Send the daily briefing as a rich Discord embed."""
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
 
+    def _price_str(r):
+        pl = r.get("price_levels") or {}
+        price  = pl.get("price_now")
+        change = pl.get("price_change")
+        pct    = pl.get("price_change_pct")
+        if price is None or change is None:
+            return ""
+        arrow = "▲" if change >= 0 else "▼"
+        sign  = "+" if change >= 0 else ""
+        return f"  `${price:,.2f} {sign}{change:.2f} ({sign}{pct:.2f}%) {arrow}`"
+
     # build the portfolio section text
     portfolio_lines = []
     for r in portfolio_results:
@@ -53,6 +64,7 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
             f"{emoji} **{r['ticker']}**  "
             f"T:`{micha_bar}` {r['micha_score']}/12  "
             f"F:`{peter_bar}` {r['peter_score']}/10"
+            f"{_price_str(r)}"
         )
     portfolio_text = "\n".join(portfolio_lines)
 
@@ -64,6 +76,7 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
         suggestion_lines.append(
             f"{emoji} **{r['ticker']}** ({r['sector']})  "
             f"T: {r['micha_score']}/12  F: {r['peter_score']}/10"
+            f"{_price_str(r)}"
         )
     suggestion_text = "\n".join(suggestion_lines)
 

@@ -52,6 +52,27 @@ def _esc(text):
     return html.escape(str(text))
 
 
+def _price_line(price_levels):
+    """Render price + day-change HTML, or empty string if data is missing."""
+    if not price_levels:
+        return ""
+    price  = price_levels.get("price_now")
+    change = price_levels.get("price_change")
+    pct    = price_levels.get("price_change_pct")
+    if price is None or change is None:
+        return ""
+    arrow = "▲" if change >= 0 else "▼"
+    sign  = "+" if change >= 0 else ""
+    cls   = "up" if change >= 0 else "dn"
+    return (
+        f'<div class="price-line">'
+        f'<span class="price-now">${price:,.2f}</span>'
+        f'<span class="price-chg {cls}">'
+        f'{sign}{change:.2f} ({sign}{pct:.2f}%) {arrow}'
+        f'</span></div>'
+    )
+
+
 def _format_briefing(text):
     """Turn the AI's markdown-ish briefing into simple HTML paragraphs.
     We keep this deliberately light: split on blank lines, strip stray
@@ -141,6 +162,7 @@ def _stock_entry(r, featured_reasons=True):
 
     sector = r.get("sector", "")
     sector_html = f'<span class="sector">{_esc(sector)}</span>' if sector else ""
+    price_html = _price_line(r.get("price_levels"))
 
     return f"""
     <article class="entry {cls}">
@@ -152,6 +174,7 @@ def _stock_entry(r, featured_reasons=True):
         <span class="tag tag-{cls}">{_esc(action)}</span>
       </header>
       <div class="entry-name">{_esc(r.get('name',''))}</div>
+      {price_html}
       <div class="meters">
         <div class="meter">
           <div class="meter-label">TECH <span class="meter-num">{micha}/12</span></div>
@@ -437,6 +460,19 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     color: var(--ink-dim);
     letter-spacing: 0.03em;
   }}
+
+  /* ---- price line ---- */
+  .price-line {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    margin: 2px 0 12px;
+  }}
+  .price-now {{ color: var(--ink); font-weight: 500; }}
+  .price-chg.up {{ color: var(--go); }}
+  .price-chg.dn {{ color: var(--stop); }}
 
   /* ---- footer ---- */
   .foot {{
