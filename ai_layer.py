@@ -58,6 +58,7 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=2000,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -162,6 +163,7 @@ Respond ONLY with valid JSON in exactly this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -228,6 +230,7 @@ Respond ONLY with valid JSON in this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -283,6 +286,7 @@ Respond ONLY with valid JSON:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=300,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -335,6 +339,7 @@ Respond ONLY with valid JSON in this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -362,6 +367,7 @@ Respond ONLY with valid JSON in this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
+        temperature=0.2
     )
 
     raw = response.choices[0].message.content
@@ -430,6 +436,7 @@ DATA:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=2000,
+        temperature=0.2
     )
 
     return response.choices[0].message.content
