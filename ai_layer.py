@@ -1,0 +1,375 @@
+import os
+import json
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    timeout=120.0,
+)
+
+MODEL = "deepseek/deepseek-chat"   # change here anytime
+
+
+def summarize_recent_action(data, days=40):
+    """Build a compact text summary of recent price/volume for the AI to read."""
+    recent = data.iloc[-days:]
+    lines = []
+    for date, row in recent.iterrows():
+        lines.append(
+            f"{date.date()}  "
+            f"O:{row['Open']:.2f} H:{row['High']:.2f} "
+            f"L:{row['Low']:.2f} C:{row['Close']:.2f} "
+            f"Vol:{int(row['Volume'])}"
+        )
+    return "\n".join(lines)
+
+
+def judge_breakout_and_retest(ticker, data):
+    """Ask the AI to judge Micha criteria 7 (breakout) and 8 (retest)."""
+
+    price_table = summarize_recent_action(data)
+
+    prompt = f"""You are a strict technical analyst applying the Micha Method.
+Analyze the last 40 trading days of {ticker} below.
+
+Judge exactly two criteria:
+- Criterion 7 (Breakout quality): Did the stock make a CLEAN breakout above a
+  recent resistance/consolidation, with a strong move rather than a weak, choppy push?
+- Criterion 8 (Retest quality): After any breakout, did price pull back to the
+  breakout level and HOLD it (a successful retest), rather than falling back through?
+
+If there is no clear breakout in this window, criterion 7 is FAIL and criterion 8
+is FAIL (nothing to retest).
+
+Daily data (oldest to newest):
+{price_table}
+
+Respond ONLY with valid JSON, no other text, in exactly this format:
+{{
+  "criterion_7_breakout": {{"pass": true or false, "reason": "one sentence"}},
+  "criterion_8_retest": {{"pass": true or false, "reason": "one sentence"}}
+}}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1000,
+    )
+
+    raw = response.choices[0].message.content
+
+    # strip markdown code fences if present
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        # remove the opening fence (```json or ```) and closing fence
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    # parse the JSON text into a Python dictionary
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print(f"  WARNING: could not parse AI response for {ticker}")
+        print(f"  Raw was: {raw}")
+        # safe fallback: treat both as FAIL if we can't read the answer
+        return {
+            "7_breakout_quality": False,
+            "8_retest_quality": False,
+        }
+
+    # convert to the same simple format as our other criteria
+    return {
+        "7_breakout_quality": bool(parsed["criterion_7_breakout"]["pass"]),
+        "8_retest_quality": bool(parsed["criterion_8_retest"]["pass"]),
+        "_reasons": {
+            "7": parsed["criterion_7_breakout"]["reason"],
+            "8": parsed["criterion_8_retest"]["reason"],
+        },
+    }
+def peter_lynch_score(ticker, fundamentals):
+    """Ask the AI to score the 10 Peter Lynch criteria (1-10 each) from real data."""
+
+    # build a clean readable list of the real numbers
+    facts = []
+    for key, value in fundamentals.items():
+        facts.append(f"  {key}: {value}")
+    facts_text = "\n".join(facts)
+
+    prompt = f"""You are Peter Lynch analyzing {ticker} for long-term investment.
+Below are the ACTUAL fundamental figures. Do not invent numbers; reason only from these.
+Note: some ratios may look unusual (e.g. very high ROE from buybacks) - interpret sensibly.
+Some values may be null if unavailable - score those criteria conservatively.
+
+Fundamentals:
+{facts_text}
+
+Score each of these 10 criteria from 1 (poor) to 10 (excellent):
+1. Revenue Growth
+2. EPS Growth
+3. Net Income Trend
+4. Balance Sheet Strength
+5. Cash Flow Quality
+6. Moat & Competitive Edge
+7. Valuation (P/E, PEG, FCF yield)
+8. Management quality
+9. Industry strength
+10. Long-term compounding potential
+
+Respond ONLY with valid JSON in exactly this format:
+{{
+  "scores": {{
+    "revenue_growth": <1-10>,
+    "eps_growth": <1-10>,
+    "net_income_trend": <1-10>,
+    "balance_sheet": <1-10>,
+    "cash_flow": <1-10>,
+    "moat": <1-10>,
+    "valuation": <1-10>,
+    "management": <1-10>,
+    "industry": <1-10>,
+    "long_term_compounding": <1-10>
+  }},
+  "summary": "2-3 sentence long-term fundamental assessment"
+}}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1000,
+    )
+
+    raw = response.choices[0].message.content
+
+    # strip markdown fences (same as before)
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print(f"  WARNING: could not parse Peter Lynch response for {ticker}")
+        return None
+
+    scores = parsed["scores"]
+    # Peter score = average of the 10 criteria, on a 0-10 scale
+    peter_score = sum(scores.values()) / len(scores)
+
+    return {
+        "ticker": ticker,
+        "peter_score": round(peter_score, 1),
+        "scores": scores,
+        "summary": parsed.get("summary", ""),
+    }
+
+
+
+
+def combined_verdict(ticker, micha_result, peter_result):
+    """Synthesize Micha (technical) + Peter (fundamental) into a final verdict."""
+
+    micha_score = micha_result["score"]
+    peter_score = peter_result["peter_score"]
+
+    prompt = f"""You are an investment analyst combining two analyses for {ticker}.
+
+MICHA METHOD (technical health, 0-12): {micha_score}/12
+  This measures trend strength, breakouts, volume, and relative strength.
+  A high score = technically strong/uptrending. A low score = weak/below trend.
+
+PETER LYNCH (fundamental quality, 0-10): {peter_score}/10
+  This measures business quality, growth, valuation, and moat.
+  Fundamental summary: {peter_result['summary']}
+
+Provide a verdict. Remember: a stock can be fundamentally strong but technically
+weak (possible buy-the-dip), or technically strong but fundamentally weak (momentum
+but risky). Reason about the COMBINATION.
+
+Respond ONLY with valid JSON in this format:
+{{
+  "micha_meaning": "1 sentence on what the technical score means here",
+  "peter_meaning": "1 sentence on what the fundamental score means here",
+  "short_term": "recommendation for 1-6 months",
+  "long_term": "recommendation for 2-5 years",
+  "action": "BUY NOW / WAIT FOR PULLBACK / AVOID / ACCUMULATE",
+  "accumulation_strategy": "1-2 sentences on how to build a position"
+}}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1000,
+    )
+
+    raw = response.choices[0].message.content
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print(f"  WARNING: could not parse verdict for {ticker}")
+        return None
+
+    return parsed
+
+
+
+def propose_diversifiers(portfolio_sectors, target_sectors, current_holdings, n=5):
+    """Ask the AI to propose real stock tickers from sectors the portfolio lacks."""
+
+    prompt = f"""A stock portfolio is heavily concentrated in these sectors:
+{', '.join(portfolio_sectors)}
+
+The portfolio ALREADY HOLDS these stocks - do NOT suggest any of them:
+{', '.join(current_holdings)}
+
+To improve diversification, suggest {n} real, well-known, large-cap US-listed stocks
+from these UNDERREPRESENTED sectors: {', '.join(target_sectors)}.
+
+Rules:
+- Only suggest real, currently-listed companies with well-known ticker symbols.
+- Do NOT suggest any stock already held (listed above).
+- Prefer established, high-quality companies (this will be verified against real data).
+- Spread suggestions across the target sectors, don't cluster in one.
+- Do NOT suggest any technology companies.
+
+Respond ONLY with valid JSON in this format:
+{{
+  "candidates": [
+    {{"ticker": "XXX", "company": "name", "sector": "sector", "why": "one sentence"}}
+  ]
+}}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1000,
+    )
+
+    raw = response.choices[0].message.content
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print("  WARNING: could not parse diversifier suggestions")
+        return []
+
+    # Layer 2: filter out any holdings even if the AI ignored the instruction
+    candidates = parsed["candidates"]
+    filtered = [c for c in candidates if c["ticker"].upper() not in
+                [h.upper() for h in current_holdings]]
+
+    return filtered
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1000,
+    )
+
+    raw = response.choices[0].message.content
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print("  WARNING: could not parse diversifier suggestions")
+        return []
+
+    return parsed["candidates"]
+
+
+
+
+def write_newspaper(portfolio_results, suggestions):
+    """Turn all analysis results into a readable daily newspaper."""
+
+    # build a compact data summary for the AI to write from
+    lines = ["PORTFOLIO:"]
+    for r in portfolio_results:
+        v = r["verdict"] or {}
+        lines.append(
+            f"- {r['ticker']} ({r['name']}): Micha {r['micha_score']}/12, "
+            f"Peter {r['peter_score']}/10, Action: {v.get('action','?')}. "
+            f"Short-term: {v.get('short_term','')}. "
+            f"Fundamentals: {r['peter_summary']}"
+        )
+
+    lines.append("\nDIVERSIFIER SUGGESTIONS (new sectors):")
+    for r in suggestions:
+        v = r["verdict"] or {}
+        lines.append(
+            f"- {r['ticker']} ({r['name']}, {r['sector']}): "
+            f"Micha {r['micha_score']}/12, Peter {r['peter_score']}/10, "
+            f"Action: {v.get('action','?')}. Why: {v.get('long_term','')}"
+        )
+
+    data_summary = "\n".join(lines)
+
+    prompt = f"""You are writing a daily stock newspaper for an investor.
+Below is today's analysis data. Write a clear, engaging daily briefing.
+
+Structure it as:
+1. A short market-tone opening (1-2 sentences on the overall portfolio picture)
+2. PORTFOLIO section: a brief note on each holding - its technical/fundamental
+   standing and what to do. Group similar situations if helpful.
+3. SUGGESTIONS section: present the diversifier ideas and why they'd strengthen
+   a tech-heavy portfolio.
+4. A one-line bottom-line takeaway.
+
+Keep it concise and readable - this is a daily brief, not an essay. Use the real
+scores and actions. Do not invent any numbers beyond what's given.
+End with a brief reminder that this is analysis, not financial advice.
+
+DATA:
+{data_summary}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=2000,
+    )
+
+    return response.choices[0].message.content
+
+
+
+
+# --- test it ---
+if __name__ == "__main__":
+    from data import get_price_history
+
+    ticker = "ASML"
+    data = get_price_history(ticker)
+    print(f"Asking AI to judge breakout & retest for {ticker}...\n")
+    result = judge_breakout_and_retest(ticker, data)
+
+    print(f"Criterion 7 (breakout): {'PASS' if result['7_breakout_quality'] else 'FAIL'}")
+    print(f"  reason: {result['_reasons']['7']}")
+    print(f"Criterion 8 (retest):   {'PASS' if result['8_retest_quality'] else 'FAIL'}")
+    print(f"  reason: {result['_reasons']['8']}")

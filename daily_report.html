@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Wire — Daily Stock Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1620;
+    --panel: #161f2b;
+    --panel-2: #1b2633;
+    --ink: #e8eef5;
+    --ink-dim: #8da0b5;
+    --line: #263444;
+    --amber: #f2b134;
+    --go: #34d399;
+    --hold: #f2b134;
+    --stop: #f26d6d;
+    --neutral: #6b7d92;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---- masthead ---- */
+  .masthead {
+    border-bottom: 2px solid var(--amber);
+    padding: 40px 0 18px;
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 10px;
+  }
+  .title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(42px, 8vw, 86px);
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+    margin: 0;
+  }
+  .title .the { color: var(--ink-dim); font-weight: 400; }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0.05em;
+  }
+  .readout b { color: var(--ink); }
+
+  /* ---- section labels ---- */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 54px 0 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+  }
+  .section-label .count { color: var(--amber); }
+
+  /* ---- lead briefing ---- */
+  .lead {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    padding: 30px 34px;
+    margin-top: 18px;
+    border-radius: 2px;
+  }
+  .lead p { margin: 0 0 14px; font-size: 17px; color: #d6e0eb; }
+  .lead p:first-of-type::first-letter {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 3.1em;
+    float: left;
+    line-height: 0.8;
+    padding: 6px 12px 0 0;
+    color: var(--amber);
+  }
+  .lead-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    margin: 22px 0 10px;
+  }
+
+  /* ---- entries grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 16px;
+  }
+  .entry {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--neutral);
+    border-radius: 2px;
+    padding: 18px 20px 20px;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .entry:hover { transform: translateY(-2px); }
+  .entry.go { border-top-color: var(--go); }
+  .entry.hold { border-top-color: var(--hold); }
+  .entry.stop { border-top-color: var(--stop); }
+  .entry-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .entry-id { display: flex; flex-direction: column; gap: 3px; }
+  .ticker {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+  }
+  .sector {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .entry-name {
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin: 2px 0 14px;
+    font-style: italic;
+  }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 5px 9px;
+    border-radius: 2px;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .tag-go { background: rgba(52,211,153,.14); color: var(--go); border: 1px solid rgba(52,211,153,.3); }
+  .tag-hold { background: rgba(242,177,52,.14); color: var(--hold); border: 1px solid rgba(242,177,52,.3); }
+  .tag-stop { background: rgba(242,109,109,.14); color: var(--stop); border: 1px solid rgba(242,109,109,.3); }
+  .tag-neutral { background: rgba(107,125,146,.14); color: var(--neutral); border: 1px solid rgba(107,125,146,.3); }
+
+  /* ---- meters ---- */
+  .meters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+  .meter-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-dim);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .meter-num { color: var(--ink); }
+  .meter-track {
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2b6cb0, #4299e1);
+    border-radius: 3px;
+  }
+  .meter-fill.alt { background: linear-gradient(90deg, #b7791f, var(--amber)); }
+
+  /* ---- reasons ---- */
+  .reasons {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .reason { display: grid; grid-template-columns: 78px 1fr; gap: 10px; }
+  .reason-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    padding-top: 2px;
+  }
+  .reason-val { font-size: 13px; color: #c4d1de; line-height: 1.5; }
+
+  /* ---- footer ---- */
+  .foot {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  .foot .warn { color: var(--ink); }
+
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr; }
+    .lead { padding: 22px 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .entry { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="masthead">
+      <p class="eyebrow">Market Dispatch · Automated Daily Edition</p>
+      <h1 class="title"><span class="the">The</span> Wire</h1>
+      <div class="meta-row">
+        <span class="dateline">Saturday, June 20, 2026 · 15:05</span>
+        <span class="readout">PORTFOLIO SIGNAL · <b>4/8</b> accumulate</span>
+      </div>
+    </header>
+
+    <div class="section-label"><span>The Briefing</span><span class="count">lead</span></div>
+    <div class="lead">
+      <p>Market Tone: Today’s tech-heavy portfolio shows resilience but faces near-term valuation concerns, with most holdings suggesting caution and patience for pullbacks before further accumulation.</p>
+<h3 class="lead-sub">PORTFOLIO:</h3>
+<p>AAPL, MSFT, ASML, META: Strong fundamentals with solid moats and long-term compounding potential, but elevated valuations and technicals suggest WAIT FOR PULLBACK before ACCUMULATING.</p>
+<p>NVDA, GOOGL, TSM, AMZN: Exceptional industry positioning and growth prospects, but neutral to slightly cautious near-term due to stretched valuations or lack of technical momentum. WAIT FOR PULLBACK.</p>
+<h3 class="lead-sub">SUGGESTIONS:</h3>
+<p>Diversify into financials (JPM), industrials (UNP), and healthcare (JNJ) to balance the tech-heavy portfolio. These sectors offer attractive fundamentals and long-term growth potential while reducing cyclical risks tied to tech valuations.</p>
+<p>Bottom Line: Tech remains a strong long-term play, but patience for pullbacks and sector diversification will enhance portfolio resilience.</p>
+<p>Reminder: This is analysis, not financial advice.*</p>
+    </div>
+
+    <div class="section-label"><span>Portfolio Holdings</span><span class="count">8 positions</span></div>
+    <div class="grid">
+      
+    <article class="entry go">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">AAPL</span>
+          <span class="sector">Technology</span>
+        </div>
+        <span class="tag tag-go">ACCUMULATE</span>
+      </header>
+      <div class="entry-name">Apple Inc.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">7/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">7.7/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:77%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">AAPL&#x27;s technical score of 7/12 indicates moderate trend strength and relative health, but not overwhelmingly strong momentum.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">AAPL&#x27;s fundamental score of 7.7/10 reflects strong business quality, growth, and moat, but concerns about overvaluation and balance sheet leverage.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding, given Apple&#x27;s industry leadership and management quality.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks to mitigate short-term technical weakness and overvaluation concerns. Focus on dollar-cost averaging to smooth entry points.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">AAPL made a clean breakout above the 300 resistance level on 2026-05-21 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, AAPL fell back below the 300 level, failing to hold the retest.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">NVDA</span>
+          <span class="sector">Technology</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">NVIDIA Corporation</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.3/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:83%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with some weaknesses, suggesting the stock is not in a strong uptrend but also not severely downtrending.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.3/10 reflects NVIDIA&#x27;s exceptional growth, strong moat, and reasonable valuation, though leverage and cyclical risks warrant caution.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly cautious, as technicals are not strongly supportive of immediate upside.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish, given NVIDIA&#x27;s dominant position in AI and semiconductors, with strong growth and compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips or technical support levels, scaling in gradually to mitigate short-term volatility while capitalizing on long-term growth.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">NVDA made a clean breakout above the 216.36 resistance level on 2026-05-14 with a strong move to 235.47.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the breakout level and did not hold it, failing to retest successfully.</span></div></div>
+    </article>
+    
+
+    <article class="entry go">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">MSFT</span>
+          <span class="sector">Technology</span>
+        </div>
+        <span class="tag tag-go">ACCUMULATE</span>
+      </header>
+      <div class="entry-name">Microsoft Corporation</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">1/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:8%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.4/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:84%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">A score of 1/12 indicates MSFT is technically weak, showing poor trend strength and potential downtrend.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">A score of 8.4/10 reflects MSFT&#x27;s strong fundamentals, including robust growth, solid financials, and a competitive moat.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term growth and compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks or weakness, leveraging dollar-cost averaging to mitigate short-term technical risks while capitalizing on long-term fundamentals.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">MSFT made a clean breakout above recent resistance at ~$430 on 2026-05-29 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back through the breakout level without holding it.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">GOOGL</span>
+          <span class="sector">Communication Services</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">Alphabet Inc.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.4/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:84%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with no clear breakout or strong momentum, suggesting sideways or choppy price action in the near term.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.4/10 reflects Alphabet Inc.&#x27;s strong business quality, growth potential, and competitive moat, with a slightly elevated valuation that is justified by long-term compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly cautious due to lack of strong technical momentum, but no major downside risks.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy given the company&#x27;s robust fundamentals, growth trajectory, and industry leadership.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips or near key technical support levels (e.g., 200-day moving average) to capitalize on long-term growth while mitigating near-term volatility.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance with a strong move from $349.73 to $384.57 on 2026-04-30.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to the breakout level and hold it; instead, it continued to fluctuate without a clear retest.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">TSM</span>
+          <span class="sector">Technology</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">Taiwan Semiconductor Manufacturing Company Limited</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">7/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.6/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:86%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">TSM&#x27;s technical score of 7/12 indicates moderate strength with some uptrend signals but not overwhelmingly bullish.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">TSM&#x27;s fundamental score of 8.6/10 reflects high-quality business with strong growth, a durable moat, and solid financials, though valuation is slightly elevated.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly positive, as technicals are decent but not compelling enough to chase.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy, given TSM&#x27;s exceptional fundamentals and long-term growth potential in semiconductors.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on dips or technical support levels (e.g., near moving averages or prior consolidation zones) to mitigate short-term volatility while capitalizing on long-term upside.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance at around 429.54 on 2026-05-27 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level without holding it, indicating a failed retest.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">AMZN</span>
+          <span class="sector">Consumer Cyclical</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">Amazon.com, Inc.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">5/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.1/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:81%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 5/12 indicates AMZN is currently weak or below its trend, suggesting lack of momentum.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.1/10 highlights AMZN&#x27;s strong business quality, growth potential, and competitive moat, making it a compelling long-term investment.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Start buying incrementally during technical weakness or pullbacks, focusing on dollar-cost averaging to build a position over time.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance observed in the last 40 trading days.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
+    </article>
+    
+
+    <article class="entry go">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">ASML</span>
+          <span class="sector">Technology</span>
+        </div>
+        <span class="tag tag-go">ACCUMULATE</span>
+      </header>
+      <div class="entry-name">ASML Holding N.V.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">8/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:67%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">7.7/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:77%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">ASML is technically strong with a score of 8/12, indicating robust trend strength, breakouts, and relative momentum.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">ASML is fundamentally high-quality (7.7/10) with strong growth and a dominant moat, but its valuation is stretched and debt levels are concerning.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding, given its industry leadership and critical role in chip manufacturing.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness to mitigate near-term valuation risks, focusing on long-term growth potential.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance around 1650 on 2026-06-02 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to retest the breakout level around 1650.</span></div></div>
+    </article>
+    
+
+    <article class="entry go">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">META</span>
+          <span class="sector">Communication Services</span>
+        </div>
+        <span class="tag tag-go">ACCUMULATE</span>
+      </header>
+      <div class="entry-name">Meta Platforms, Inc.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">0/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:0%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">8.2/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:82%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 0/12 indicates META is currently weak or below its trend, lacking momentum and breakout signals.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.2/10 reflects strong business quality, growth, and moat, with reasonable valuation and excellent long-term compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term growth and compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness, as the stock is fundamentally strong but technically weak. Consider dollar-cost averaging to mitigate short-term volatility.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock did not make a clean breakout above recent resistance; instead, it showed choppy and weak movement.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">There was no clear breakout to retest, hence no retest quality can be assessed.</span></div></div>
+    </article>
+    
+    </div>
+
+    <div class="section-label"><span>Diversifier Dispatches</span><span class="count">new sectors</span></div>
+    <div class="grid">
+      
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">JPM</span>
+          <span class="sector">Financial Services</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">JPMorgan Chase &amp; Co.</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">7.5/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:75%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates JPM is in a neutral trend with no clear breakout or strong momentum.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.5/10 reflects strong business quality, growth, and reasonable valuation, making it a high-quality long-term investment.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral; technicals suggest limited upside or downside in the near term.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish; fundamentals support long-term growth and compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on dips or weakness in technicals, targeting key support levels to improve entry points.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">JPM made a clean breakout above the recent resistance level of 325 on 2026-06-16 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">The price did not pull back to retest the breakout level of 325; it continued to move higher without a retest.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">UNP</span>
+          <span class="sector">Industrials</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">Union Pacific Corporation</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">6.4/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:64%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates a neutral trend with moderate strength, neither strongly uptrending nor weak.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 6.4/10 reflects a solid but not exceptional business with strong cash flow and moat, but limited by debt and modest growth.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">ACCUMULATE</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks to key technical support levels, focusing on periods of market weakness to improve entry points.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">A clean breakout occurred on 2026-05-27, with a strong move above the recent resistance of 274.25.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">The breakout level was not held during the subsequent pullback, as price fell below 274.25 on 2026-05-28.</span></div></div>
+    </article>
+    
+
+    <article class="entry hold">
+      <header class="entry-head">
+        <div class="entry-id">
+          <span class="ticker">JNJ</span>
+          <span class="sector">Healthcare</span>
+        </div>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+      </header>
+      <div class="entry-name">Johnson &amp; Johnson</div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">TECH <span class="meter-num">5/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">FUND <span class="meter-num">6.5/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:65%"></div></div>
+        </div>
+      </div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">A score of 5/12 indicates JNJ is currently in a neutral to weak technical position, lacking strong trend momentum or breakout signals.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">A score of 6.5/10 reflects JNJ&#x27;s solid fundamentals, including a strong moat and balance sheet, but concerns over earnings growth and valuation.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">ACCUMULATE</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks to key support levels, leveraging dollar-cost averaging to mitigate short-term technical weakness while capitalizing on long-term fundamental strength.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of ~230 on 2026-06-05 with a strong move to ~235.22.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level (~230) on 2026-06-15, failing to hold the retest.</span></div></div>
+    </article>
+    
+    </div>
+
+    <footer class="foot">
+      <p class="warn">Generated automatically from market data · Analysis, not financial advice.</p>
+      <p>The Wire · built with the Micha Method &amp; Peter Lynch scoring</p>
+    </footer>
+  </div>
+</body>
+</html>

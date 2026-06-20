@@ -1,0 +1,168 @@
+import pandas as pd
+
+def micha_criteria_1_to_5(data):
+    """Compute Micha Method criteria 1-5 from price history.
+    Returns a dict of PASS/FAIL results."""
+
+    close = data["Close"]
+
+    # --- compute the moving averages ---
+    sma50 = close.rolling(window=50).mean()
+    sma150 = close.rolling(window=150).mean()
+
+    # grab the most recent values (last row)
+    price_now = close.iloc[-1]
+    sma50_now = sma50.iloc[-1]
+    sma150_now = sma150.iloc[-1]
+    sma150_past = sma150.iloc[-21]   # ~20 trading days ago
+
+    # --- evaluate each criterion ---
+    results = {}
+    results["1_price_above_sma150"] = price_now > sma150_now
+    results["2_sma150_slope_positive"] = sma150_now > sma150_past
+    results["3_price_above_sma50"] = price_now > sma50_now
+    results["4_sma50_above_sma150"] = sma50_now > sma150_now
+
+    # Golden cross: sma50 is above sma150 now, but was below it recently
+    sma50_past = sma50.iloc[-21]
+    sma150_past_for_cross = sma150.iloc[-21]
+    cross_happened = (sma50_now > sma150_now) and (sma50_past <= sma150_past_for_cross)
+    results["5_golden_cross_recent"] = cross_happened
+
+    return results
+
+def micha_criteria_6_to_12_code(data, benchmark_data):
+    """Compute the code-based Micha criteria: 6, 9, 10, 11, 12.
+    (7 and 8 are judged by the AI separately.)
+    Returns a dict of PASS/FAIL results."""
+
+    high = data["High"]
+    low = data["Low"]
+    close = data["Close"]
+    volume = data["Volume"]
+
+    results = {}
+
+    # --- 6: ATR shock (a recent day moved > 3% beyond normal range) ---
+    # True Range = the bigger of: today's high-low, or gap from yesterday's close
+    prev_close = close.shift(1)
+    true_range = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs()
+    ], axis=1).max(axis=1)
+    atr = true_range.rolling(window=14).mean()
+
+    # daily % move over the last 10 days vs the typical ATR %
+    recent_pct_moves = (close.pct_change().abs() * 100).iloc[-10:]
+    atr_pct = (atr.iloc[-1] / close.iloc[-1]) * 100
+    # "shock" = any recent day moved more than ATR% + 3%
+    results["6_atr_shock_recent"] = bool((recent_pct_moves > (atr_pct + 3)).any())
+
+    # --- 9: Volume expansion (recent volume above its average) ---
+    avg_vol_50 = volume.rolling(window=50).mean()
+    recent_vol = volume.iloc[-5:].mean()          # last 5 days
+    # expansion = recent volume at least 1.5x the 50-day average
+    results["9_volume_expansion"] = bool(recent_vol > 1.5 * avg_vol_50.iloc[-1])
+
+    # --- 10: Volume dry-up (a quiet stretch existed before recent action) ---
+    # look at days 6-20 ago: was volume unusually low vs the 50-day average?
+    prior_vol = volume.iloc[-20:-5].mean()
+    results["10_volume_dryup_before"] = bool(prior_vol < 0.8 * avg_vol_50.iloc[-1])
+
+    # --- 11: Higher highs & higher lows (uptrend structure) ---
+    # compare the most recent ~3 months to the prior ~3 months
+    recent = close.iloc[-63:]
+    prior = close.iloc[-126:-63]
+    higher_high = recent.max() > prior.max()
+    higher_low = recent.min() > prior.min()
+    results["11_higher_highs_lows"] = bool(higher_high and higher_low)
+
+    # --- 12: Relative strength vs S&P500 (stock outperforming index) ---
+    # compare 6-month return of stock vs benchmark
+    stock_return = (close.iloc[-1] / close.iloc[-126]) - 1
+    bench_close = benchmark_data["Close"]
+    bench_return = (bench_close.iloc[-1] / bench_close.iloc[-126]) - 1
+    results["12_rs_vs_sp500"] = bool(stock_return > bench_return)
+
+    return results
+def full_micha_analysis(ticker, data, benchmark_data):
+    """Run all 12 Micha criteria (10 code + 2 AI) and return combined results."""
+    from ai_layer import judge_breakout_and_retest
+
+    # code-based criteria
+    part1 = micha_criteria_1_to_5(data)
+    part2 = micha_criteria_6_to_12_code(data, benchmark_data)
+
+    # AI-based criteria (7 & 8)
+    ai_part = judge_breakout_and_retest(ticker, data)
+    reasons = ai_part.pop("_reasons", {})   # pull reasons out separately
+
+    # merge everything into one dict
+    all_criteria = {**part1, **part2, **ai_part}
+
+    score = sum(all_criteria.values())
+
+    return {
+        "ticker": ticker,
+        "score": score,
+        "criteria": all_criteria,
+        "ai_reasons": reasons,
+    }
+# --- test it ---
+if __name__ == "__main__":
+    from data import get_price_history
+    from config import PORTFOLIO, BENCHMARK
+
+    print("Fetching benchmark (S&P500)...")
+    benchmark_data = get_price_history(BENCHMARK)
+
+    results = []
+    for ticker in PORTFOLIO:
+        print(f"\nAnalyzing {ticker}...")
+        try:
+            data = get_price_history(ticker)
+            result = full_micha_analysis(ticker, data, benchmark_data)
+            results.append(result)
+            print(f"  {ticker}: MICHA SCORE {result['score']}/12")
+        except Exception as e:
+            print(f"  ERROR analyzing {ticker}: {e}")
+
+    # summary table, sorted best to worst
+    print("\n" + "=" * 40)
+    print("PORTFOLIO MICHA SCORES (best to worst)")
+    print("=" * 40)
+    results.sort(key=lambda r: r["score"], reverse=True)
+    for r in results:
+        print(f"  {r['ticker']:6} {r['score']}/12")
+
+
+def analyze_stock(ticker, benchmark_data):
+    """Run the COMPLETE analysis (all 3 parts) for one stock."""
+    from data import get_price_history
+    from fundamentals import get_fundamentals
+    from ai_layer import peter_lynch_score, combined_verdict
+
+    data = get_price_history(ticker)
+
+    # Part 1: Micha technical
+    micha = full_micha_analysis(ticker, data, benchmark_data)
+
+    # Part 2: Peter Lynch fundamental
+    fundamentals = get_fundamentals(ticker)
+    peter = peter_lynch_score(ticker, fundamentals)
+
+    # Part 3: combined verdict
+    verdict = combined_verdict(ticker, micha, peter)
+
+    return {
+        "ticker": ticker,
+        "name": fundamentals.get("name", ticker),
+        "sector": fundamentals.get("sector", "Unknown"),
+        "micha_score": micha["score"],
+        "micha_criteria": micha["criteria"],
+        "micha_reasons": micha["ai_reasons"],
+        "peter_score": peter["peter_score"] if peter else None,
+        "peter_summary": peter["summary"] if peter else "",
+        "verdict": verdict,
+    }
