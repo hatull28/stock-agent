@@ -18,6 +18,12 @@ import html
 
 # ---- small helpers -------------------------------------------------------
 
+def _cycle_class(stage):
+    return {"EARLY": "cycle-early", "MID": "cycle-mid", "LATE": "cycle-late"}.get(
+        (stage or "").upper(), "cycle-none"
+    )
+
+
 def _action_class(action):
     """Map an action string to a CSS class / signal color group."""
     if not action:
@@ -79,6 +85,27 @@ def _stock_entry(r, featured_reasons=True):
     micha = r.get("micha_score", 0)
     peter = r.get("peter_score") or 0
 
+    # --- cycle stage + buy zone strip ---
+    cycle_stage = r.get("cycle_stage", "")
+    buy_zone = r.get("buy_zone")
+    cycle_html = ""
+    if cycle_stage and cycle_stage != "NONE":
+        bz_text = ""
+        if buy_zone:
+            bz_text = (
+                f'<span class="buy-range">'
+                f'BUY ZONE&nbsp;&nbsp;${buy_zone["low"]:.2f}&nbsp;&ndash;&nbsp;${buy_zone["high"]:.2f}'
+                f'</span>'
+                f'<span class="floor-hint">&nbsp;&middot;&nbsp;floor ${buy_zone["floor"]:.2f}</span>'
+            )
+        cycle_html = (
+            f'<div class="cycle-strip">'
+            f'<span class="cycle-badge {_cycle_class(cycle_stage)}">{_esc(cycle_stage)}</span>'
+            f'{bz_text}'
+            f'</div>'
+        )
+
+    # --- reasons ---
     reasons_html = ""
     if featured_reasons:
         reasons = r.get("micha_reasons") or {}
@@ -96,6 +123,10 @@ def _stock_entry(r, featured_reasons=True):
             bits.append(("Long term", long_term))
         if strategy:
             bits.append(("Strategy", strategy))
+        if r.get("cycle_stage_reasoning"):
+            bits.append(("Cycle", r["cycle_stage_reasoning"]))
+        if r.get("buy_zone_narrative"):
+            bits.append(("Buy zone", r["buy_zone_narrative"]))
         if reasons.get("7"):
             bits.append(("Breakout", reasons["7"]))
         if reasons.get("8"):
@@ -131,6 +162,7 @@ def _stock_entry(r, featured_reasons=True):
           <div class="meter-track"><div class="meter-fill alt" style="width:{_bar(peter,10)}%"></div></div>
         </div>
       </div>
+      {cycle_html}
       {reasons_html}
     </article>
     """
@@ -367,6 +399,44 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     padding-top: 2px;
   }}
   .reason-val {{ font-size: 13px; color: #c4d1de; line-height: 1.5; }}
+
+  /* ---- cycle strip ---- */
+  .cycle-strip {{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 2px;
+    padding: 9px 12px;
+    background: var(--panel-2);
+    border-radius: 2px;
+    border: 1px solid var(--line);
+    flex-wrap: wrap;
+  }}
+  .cycle-badge {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }}
+  .cycle-early {{ background: rgba(52,211,153,.14); color: #34d399; border: 1px solid rgba(52,211,153,.3); }}
+  .cycle-mid   {{ background: rgba(66,153,225,.14); color: #4299e1; border: 1px solid rgba(66,153,225,.3); }}
+  .cycle-late  {{ background: rgba(242,177,52,.14); color: #f2b134; border: 1px solid rgba(242,177,52,.3); }}
+  .cycle-none  {{ background: rgba(107,125,146,.14); color: #6b7d92; border: 1px solid rgba(107,125,146,.3); }}
+  .buy-range {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }}
+  .floor-hint {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+  }}
 
   /* ---- footer ---- */
   .foot {{

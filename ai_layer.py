@@ -57,7 +57,7 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=1000,
+        max_tokens=2000,
     )
 
     raw = response.choices[0].message.content
@@ -75,13 +75,33 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError:
-        print(f"  WARNING: could not parse AI response for {ticker}")
-        print(f"  Raw was: {raw}")
-        # safe fallback: treat both as FAIL if we can't read the answer
-        return {
-            "7_breakout_quality": False,
-            "8_retest_quality": False,
-        }
+        print(f"  WARNING: could not parse AI response for {ticker}, retrying...")
+        retry_prompt = (
+            f"Return ONLY this JSON for {ticker}, no other text:\n"
+            f'{{"criterion_7_breakout":{{"pass":true,"reason":"one sentence"}},'
+            f'"criterion_8_retest":{{"pass":false,"reason":"one sentence"}}}}\n\n'
+            f"Use the price data you already know. Was there a clean breakout? Was there a successful retest?"
+        )
+        retry_resp = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": retry_prompt},
+            ],
+            max_tokens=400,
+        )
+        retry_raw = retry_resp.choices[0].message.content.strip()
+        if retry_raw.startswith("```"):
+            retry_raw = retry_raw.split("```")[1]
+            if retry_raw.startswith("json"):
+                retry_raw = retry_raw[4:]
+            retry_raw = retry_raw.strip()
+        try:
+            parsed = json.loads(retry_raw)
+        except json.JSONDecodeError:
+            print(f"  WARNING: retry also failed for {ticker}, defaulting both to FAIL")
+            return {"7_breakout_quality": False, "8_retest_quality": False}
 
     # convert to the same simple format as our other criteria
     return {
@@ -226,6 +246,63 @@ Respond ONLY with valid JSON in this format:
 
     return parsed
 
+
+def analyze_cycle_and_zones(ticker, cycle_stage, price_levels, buy_zone, criteria):
+    """Write 2 sentences of prose around code-computed cycle stage and buy zone.
+    All dollar amounts are locked in the prompt — the AI only provides framing."""
+
+    cross = price_levels["golden_cross_days_ago"]
+    cross_str = f"{cross} trading days ago" if cross is not None else "not within last 50 days"
+
+    facts = f"""Computed facts for {ticker}:
+- Current price: ${price_levels['price_now']:.2f}
+- SMA50: ${price_levels['sma50']:.2f} (price is {price_levels['price_vs_sma50_pct']:+.1f}% vs SMA50)
+- SMA150: ${price_levels['sma150']:.2f} (price is {price_levels['price_vs_sma150_pct']:+.1f}% vs SMA150)
+- Recent 3-month low (support floor): ${price_levels['recent_3m_low']:.2f}
+- 52-week low: ${price_levels['week_52_low']:.2f}
+- Golden cross occurred: {cross_str}
+- Higher highs & higher lows: {criteria.get("11_higher_highs_lows", False)}
+- Code-computed cycle stage: {cycle_stage}
+- Computed buy zone: ${buy_zone['low']:.2f} – ${buy_zone['high']:.2f} (floor support: ${buy_zone['floor']:.2f})"""
+
+    prompt = f"""{facts}
+
+Write exactly two sentences:
+1. Explain in one sentence WHY this stock is classified as {cycle_stage} in its trend cycle, citing the specific numbers above.
+2. Describe the buy zone (${buy_zone['low']:.2f}–${buy_zone['high']:.2f}) in one sentence, naming which price level anchors the lower bound and where the floor support sits.
+
+DO NOT invent any prices. Use only the numbers in the facts block above.
+
+Respond ONLY with valid JSON:
+{{
+  "cycle_stage_reasoning": "one sentence",
+  "buy_zone_narrative": "one sentence"
+}}"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=300,
+    )
+
+    raw = response.choices[0].message.content
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```")[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        print(f"  WARNING: could not parse cycle/zone response for {ticker}")
+        return {}
+
+    return {
+        "cycle_stage_reasoning": parsed.get("cycle_stage_reasoning", ""),
+        "buy_zone_narrative":    parsed.get("buy_zone_narrative", ""),
+    }
 
 
 def propose_diversifiers(portfolio_sectors, target_sectors, current_holdings, n=5):

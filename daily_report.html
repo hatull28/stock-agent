@@ -211,6 +211,44 @@
   }
   .reason-val { font-size: 13px; color: #c4d1de; line-height: 1.5; }
 
+  /* ---- cycle strip ---- */
+  .cycle-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 2px;
+    padding: 9px 12px;
+    background: var(--panel-2);
+    border-radius: 2px;
+    border: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .cycle-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .cycle-early { background: rgba(52,211,153,.14); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+  .cycle-mid   { background: rgba(66,153,225,.14); color: #4299e1; border: 1px solid rgba(66,153,225,.3); }
+  .cycle-late  { background: rgba(242,177,52,.14); color: #f2b134; border: 1px solid rgba(242,177,52,.3); }
+  .cycle-none  { background: rgba(107,125,146,.14); color: #6b7d92; border: 1px solid rgba(107,125,146,.3); }
+  .buy-range {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }
+  .floor-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+  }
+
   /* ---- footer ---- */
   .foot {
     margin-top: 64px;
@@ -239,63 +277,62 @@
       <p class="eyebrow">Market Dispatch · Automated Daily Edition</p>
       <h1 class="title"><span class="the">The</span> Wire</h1>
       <div class="meta-row">
-        <span class="dateline">Saturday, June 20, 2026 · 16:41</span>
+        <span class="dateline">Saturday, June 20, 2026 · 17:19</span>
         <span class="readout">PORTFOLIO SIGNAL · <b>4/8</b> accumulate</span>
       </div>
     </header>
 
     <div class="section-label"><span>The Briefing</span><span class="count">lead</span></div>
     <div class="lead">
-      <p>Daily Stock Briefing</p>
-<p>Market Tone: The portfolio remains tech-heavy with strong long-term compounders, but near-term caution is advised for several holdings awaiting pullbacks. Diversification into financials, healthcare, or industrials could balance risk.</p>
-<p>---</p>
+      <p>Daily Investor Briefing</p>
+<p>Market Tone</p>
+<p>The tech-heavy portfolio remains strong but faces near-term resistance, with most holdings signaling *&quot;Wait for Pullback&quot;* before adding. Diversification into financials, healthcare, or industrials could balance exposure.</p>
 <h3 class="lead-sub">PORTFOLIO</h3>
-<h3 class="lead-sub">BUY NOW:</h3>
-<p>- AAPL – Strong fundamentals, robust cash flow, and a wide moat justify immediate accumulation despite slight valuation concerns.</p>
-<p>ACCUMULATE (but wait for pullbacks):</p>
-<p>- MSFT, GOOGL, AMZN – All exhibit solid growth and moats, but elevated valuations suggest patience for better entry points.</p>
-<h3 class="lead-sub">HOLD / WAIT FOR PULLBACK:</h3>
-<p>- NVDA, TSM, ASML, META – Exceptional long-term potential but face technical weakness or valuation pressures. Monitor for dips.</p>
-<p>---</p>
-<p>SUGGESTIONS (Diversifiers)</p>
-<p>To balance tech exposure, consider:</p>
-<p>- JPM (Financials) – Strong fundamentals and compounding potential.</p>
-<p>- JNJ (Healthcare) – Durable moat, though wait for a pullback.</p>
-<p>- UNP (Industrials) – Stable cash flow but limited upside.</p>
-<p>---</p>
-<p>Bottom Line: Tech remains core, but diversify selectively—patience is key for optimal entries.</p>
+<p>Tech Leaders (AAPL, NVDA, MSFT, GOOGL, AMZN, META, TSM, ASML):</p>
+<p>- Strong Fundamentals, Wait for Better Entry: Most stocks (AAPL, NVDA, TSM, ASML) show high valuations and mixed technicals—hold or take partial profits.</p>
+<p>- Accumulate on Dips: MSFT, GOOGL, AMZN, and META remain long-term winners, but wait for pullbacks given elevated PEG ratios.</p>
+<h3 class="lead-sub">SUGGESTIONS</h3>
+<p>Diversifiers for a Tech-Heavy Portfolio:</p>
+<p>- JPM (Financials): Strong long-term potential, but wait for a pullback.</p>
+<p>- JNJ (Healthcare): Resilient defensive play; accumulate for stability.</p>
+<p>- UPS (Industrials): Moderate growth, but adds sector balance.</p>
+<p>Bottom Line</p>
+<p>Stay patient—tech leaders are strong but overextended; diversify selectively.</p>
 <p>Remember: This is analysis, not financial advice.*</p>
     </div>
 
     <div class="section-label"><span>Portfolio Holdings</span><span class="count">8 positions</span></div>
     <div class="grid">
       
-    <article class="entry go">
+    <article class="entry hold">
       <header class="entry-head">
         <div class="entry-id">
           <span class="ticker">AAPL</span>
           <span class="sector">Technology</span>
         </div>
-        <span class="tag tag-go">BUY NOW</span>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
       </header>
       <div class="entry-name">Apple Inc.</div>
       <div class="meters">
         <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">9/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:75%"></div></div>
+          <div class="meter-label">TECH <span class="meter-num">7/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:78%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">7.9/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:79%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">AAPL is technically strong with a score of 9/12, indicating robust trend strength, breakouts, and relative strength.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">AAPL is fundamentally sound with a score of 7.8/10, reflecting strong business quality, growth, and a competitive moat, though valuation is slightly elevated.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">BUY NOW</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">ACCUMULATE</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider accumulating on minor pullbacks (5-10%) to capitalize on the strong technical and fundamental backdrop. Dollar-cost averaging over 3-6 months can mitigate short-term volatility.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">AAPL made a clean breakout above the $300 resistance level with a strong move on 2026-05-21.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">The stock successfully retested the breakout level around $300 on 2026-05-18 and held it.</span></div></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$288.63&nbsp;&ndash;&nbsp;$300.18</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $246.40</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">AAPL is moderately strong technically, showing some trend strength and relative performance but not in a clear uptrend.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">AAPL has strong fundamentals, with exceptional business quality and growth potential, but its elevated valuation limits the margin of safety.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or consider partial profit-taking, as the technical score suggests limited upside momentum in the near term.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Hold or accumulate, as AAPL&#x27;s fundamentals indicate long-term compounding potential and industry leadership.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually during market pullbacks or periods of technical weakness to capitalize on lower entry points.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because the current price ($298.01) is above both the SMA50 ($288.63) and SMA150 ($272.66), with higher highs &amp; lows confirmed, and a golden cross occurred 22 trading days ago.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($288.63–$300.18) is anchored by the SMA50 ($288.63) as the lower bound, with floor support at $246.40.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance or consolidation occurred in the 40-day window.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">There was no breakout, hence no retest to evaluate.</span></div></div>
     </article>
     
 
@@ -314,16 +351,19 @@
           <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.3/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:83%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">8.1/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:81%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength, with mixed signals in breakouts, volume, and relative strength.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.3/10 highlights NVIDIA&#x27;s strong business quality, growth potential, and moat, though financial leverage remains a concern.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or cautiously monitor, as technical weakness may lead to near-term volatility.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy, given NVIDIA&#x27;s robust fundamentals and long-term compounding potential.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Gradually build a position on pullbacks to $400-$450, leveraging dollar-cost averaging to mitigate timing risks.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance around 224.10 on 2026-06-01 with a strong move.</span></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$209.12&nbsp;&ndash;&nbsp;$217.49</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $164.98</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with some weaknesses, suggesting the stock is not in a strong uptrend but also not severely downtrending.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.1/10 reflects NVIDIA&#x27;s exceptional growth, strong moat, and reasonable valuation, though its high debt-to-equity ratio is a minor concern.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly cautious due to mixed technical signals, but strong fundamentals provide downside support.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Highly favorable due to NVIDIA&#x27;s industry leadership, scalable technology, and long-term compounding potential.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips or technical support levels, scaling in gradually to mitigate short-term volatility while capitalizing on long-term growth.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because it is only +0.8% above its SMA50 ($209.12) and +10.0% above its SMA150 ($191.53), indicating it has recently started gaining momentum after the golden cross 36 days ago.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($209.12–$217.49) is anchored by the SMA50 ($209.12) as the lower bound, with floor support at $164.98.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance around 216.36 on 2026-04-27 with a strong move.</span></div>
 <div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back through the breakout level without holding it, indicating a failed retest.</span></div></div>
     </article>
     
@@ -347,13 +387,14 @@
           <div class="meter-track"><div class="meter-fill alt" style="width:85%"></div></div>
         </div>
       </div>
+      
       <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 1/12 indicates MSFT is currently weak/below trend, showing poor trend strength, breakouts, volume, and relative strength.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.5/10 reflects MSFT&#x27;s strong business quality, growth, valuation, and moat, with robust financials and a competitive edge in cloud computing.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.5/10 reflects Microsoft&#x27;s strong business quality, growth, valuation, and moat, with robust financials and competitive advantages.</span></div>
 <div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Start building a position on technical weakness or pullbacks, scaling in gradually to capitalize on the strong fundamentals while mitigating short-term technical risks.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">MSFT made a clean breakout above $430 on 2026-05-29 with a strong move and high volume.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the breakout level without holding it, indicating a failed retest.</span></div></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding given strong fundamentals, despite short-term technical weakness.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Scale into the position on pullbacks or signs of technical improvement, focusing on dollar-cost averaging to mitigate short-term volatility while capitalizing on long-term growth.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">MSFT made a clean breakout above the recent resistance at ~430 on 2026-05-29 with a strong move to 450.24.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the breakout level (~430) and did not hold it, failing the retest.</span></div></div>
     </article>
     
 
@@ -372,17 +413,20 @@
           <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.3/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:83%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">8.4/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:84%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates GOOGL is in a moderate trend with balanced strength and weakness signals.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.3/10 reflects strong business quality, growth, and a wide moat, though valuation is slightly elevated.</span></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$367.19&nbsp;&ndash;&nbsp;$381.88</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $273.34</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with some signs of weakness, suggesting potential consolidation or limited upside in the short term.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.4/10 reflects strong business quality, growth, and moat, but the slightly elevated valuation requires patience for optimal returns.</span></div>
 <div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks or weakness, leveraging dollar-cost averaging to mitigate short-term volatility while capitalizing on long-term growth potential.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance with a strong move on 2026-04-30, evidenced by a significant gap up and high volume.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not successfully retest and hold the breakout level, instead falling back below it in subsequent days.</span></div></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding, given the strong fundamentals and industry tailwinds.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness to mitigate short-term technical risks, focusing on long-term fundamentals. Consider dollar-cost averaging to reduce timing risk.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID because its current price ($368.03) is only +0.2% above SMA50 ($367.19) and +11.6% above SMA150 ($329.69), showing moderate momentum without extreme deviations.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($367.19–$381.88) is anchored by the SMA50 ($367.19) as the lower bound, with floor support at $273.34.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">GOOGL made a clean breakout above $373.85 with a strong move on 2026-04-30, confirmed by high volume.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the breakout level without holding it, indicating a failed retest.</span></div></div>
     </article>
     
 
@@ -401,17 +445,20 @@
           <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:88%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">8.7/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:87%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 7/12 suggests TSM is moderately strong but not yet in a robust uptrend, signaling potential consolidation or cautious momentum.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.8/10 highlights TSM&#x27;s exceptional business quality, strong growth, and dominant industry position, though valuation is slightly elevated.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or cautiously monitor, as technical indicators suggest limited momentum in the near term.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy, given TSM&#x27;s fundamentals position it well for sustained compounding growth.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Gradually build a position during periods of technical weakness or market pullbacks to capitalize on long-term growth potential at better valuations.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance at around 429.54 on 2026-05-27, followed by a strong move to 448.34 on 2026-06-01.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level of 429.54 on 2026-06-05, failing to hold the retest.</span></div></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$404.79&nbsp;&ndash;&nbsp;$420.98</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $315.76</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 7/12 indicates moderate trend strength with some positive signals but not overwhelmingly strong momentum.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.7/10 reflects TSM&#x27;s exceptional business quality, strong growth, and wide moat, though valuation is slightly expensive.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly positive, as technicals are decent but not compelling for a breakout.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy, given TSM&#x27;s fundamentals and industry leadership.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on dips or weakness, targeting a lower average entry price to account for the moderately expensive valuation.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID in its trend cycle because its current price ($462.12) is significantly above its SMA50 ($404.79) and SMA150 ($351.31), indicating a strong upward trend yet not at an extreme peak.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($404.79–$420.98) is anchored at the lower bound by the SMA50 ($404.79), with the floor support significantly lower at $315.76.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level around 430 with a strong move to 465.22.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">There was no pullback to the breakout level for a retest within the given data window.</span></div></div>
     </article>
     
 
@@ -430,17 +477,20 @@
           <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:78%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">8.1/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:81%"></div></div>
         </div>
       </div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$257.10&nbsp;&ndash;&nbsp;$267.38</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $199.34</span></div>
       <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 5/12 indicates moderate trend strength with some weaknesses, suggesting AMZN is not in a strong uptrend but also not in a clear downtrend.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.8/10 reflects strong business quality, growth, and moat, though valuation is elevated and debt is a moderate concern.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.1/10 reflects strong business quality, growth, and competitive advantages, making AMZN a compelling long-term investment.</span></div>
 <div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding potential given AMZN&#x27;s dominance in high-growth sectors.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually by buying on pullbacks or weakness to mitigate short-term technical risks while capitalizing on long-term fundamentals.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above a recent resistance/consolidation was observed in the last 40 trading days.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">There was no breakout to retest, so this criterion fails by default.</span></div></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks or weakness in the technicals, as the strong fundamentals justify long-term holding. Use dollar-cost averaging to mitigate short-term volatility.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because it recently had a golden cross 30 trading days ago and is currently trading 4.3% above its SMA150 ($234.32) while maintaining higher highs and higher lows.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($257.10–$267.38) is anchored by the SMA50 ($257.10) as the lower bound, with the floor support sitting at $199.34.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance observed in the last 40 trading days.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
     </article>
     
 
@@ -463,23 +513,26 @@
           <div class="meter-track"><div class="meter-fill alt" style="width:77%"></div></div>
         </div>
       </div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-late">LATE</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$1579.23&nbsp;&ndash;&nbsp;$1642.40</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $1251.23</span></div>
       <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The high technical score of 9/12 indicates ASML is in a strong uptrend with favorable momentum and volume support.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.7/10 reflects ASML&#x27;s dominant position and growth potential, but its high valuation and leverage are concerns.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly bullish, but caution is advised due to elevated valuation and technical overextension risks.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish, as ASML&#x27;s technological leadership and industry tailwinds should drive compounding growth over time.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips closer to key technical support levels (e.g., 200-day moving average) or when valuation metrics improve (e.g., lower P/E or PEG). Scale in gradually to mitigate timing risk.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the resistance level of around 1650 on 2026-06-02 with a strong move and high volume.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to the breakout level to confirm a successful retest.</span></div></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.7/10 reflects ASML&#x27;s dominant position and strong moat, but its high valuation and elevated debt-to-equity ratio introduce risks.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or consider partial profits if already invested, as the stock is technically strong but trading at a premium.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Buy on weakness for long-term growth, given ASML&#x27;s industry leadership and compounding potential, but avoid overpaying.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on dips below key technical support levels (e.g., 20% below current price) to mitigate valuation risks while capitalizing on long-term growth.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as LATE in its trend cycle because the current price ($1929.68) is significantly above both the SMA50 (+22.2%) and SMA150 (+41.3%), indicating an advanced upward trend.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ranges from $1579.23 (SMA50) to $1642.40, anchored by the SMA50 as the lower bound, with the floor support at $1251.23.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance around 1650 on 2026-06-02 with a strong move.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price did not pull back to the breakout level to hold it, instead continuing higher without a retest.</span></div></div>
     </article>
     
 
-    <article class="entry hold">
+    <article class="entry go">
       <header class="entry-head">
         <div class="entry-id">
           <span class="ticker">META</span>
           <span class="sector">Communication Services</span>
         </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
+        <span class="tag tag-go">ACCUMULATE</span>
       </header>
       <div class="entry-name">Meta Platforms, Inc.</div>
       <div class="meters">
@@ -488,17 +541,18 @@
           <div class="meter-track"><div class="meter-fill" style="width:0%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:88%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">8.2/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:82%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 0/12 indicates Meta&#x27;s stock is currently weak, below trend, and lacks bullish momentum.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.8/10 reflects Meta&#x27;s strong business quality, growth potential, and durable competitive advantages.</span></div>
+      
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 0/12 indicates META is currently weak/below trend, showing no signs of strength or uptrend.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.2/10 reflects strong business quality, growth, and a competitive moat, with slight valuation concerns.</span></div>
 <div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider scaling into the position on technical weakness (e.g., breakdowns or oversold RSI) while maintaining a long-term focus, as fundamentals are compelling.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance/consolidation observed in the last 40 trading days.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, so there was no retest to evaluate.</span></div></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding given strong fundamentals.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness, as the stock is fundamentally strong but technically weak, offering a better entry point over time.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance/consolidation observed in the data.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
     </article>
     
     </div>
@@ -506,13 +560,13 @@
     <div class="section-label"><span>Diversifier Dispatches</span><span class="count">new sectors</span></div>
     <div class="grid">
       
-    <article class="entry go">
+    <article class="entry hold">
       <header class="entry-head">
         <div class="entry-id">
           <span class="ticker">JPM</span>
           <span class="sector">Financial Services</span>
         </div>
-        <span class="tag tag-go">ACCUMULATE</span>
+        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
       </header>
       <div class="entry-name">JPMorgan Chase &amp; Co.</div>
       <div class="meters">
@@ -521,17 +575,20 @@
           <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:78%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">7.5/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:75%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 7/12 indicates a moderately strong trend with some positive momentum but not at peak strength.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.8/10 reflects a high-quality business with strong growth, reasonable valuation, and a durable competitive moat.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Moderate upside potential with some technical support, but not a high-conviction breakout candidate.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong compounding opportunity given the fundamental strength and competitive positioning.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness to capitalize on both technical and fundamental strength, targeting a full position over 3-6 months.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of around 315 on 2026-06-16 with a strong move to 331.75.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to the breakout level to hold it; instead, it fell back below the breakout level on 2026-06-18.</span></div></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$308.86&nbsp;&ndash;&nbsp;$321.22</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $281.40</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 7/12 suggests moderate trend strength and relative stability, but not a strong uptrend.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 7.5/10 indicates strong business quality, growth potential, and reasonable valuation, supported by a resilient industry and excellent management.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral; the stock lacks strong technical momentum but is not weak enough to suggest immediate downside.</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish; JPMorgan&#x27;s fundamentals suggest strong compounding potential over the long term.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually during pullbacks or periods of technical weakness to capitalize on long-term fundamentals.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY because it is currently +5.3% above its SMA50 and +6.3% above its SMA150, indicating the beginning of an upward trend.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ranges from $308.86 (SMA50) to $321.22, with the floor support anchored at $281.40.</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of around 316.30 on 2026-06-16 with a strong move to 331.75.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price pulled back but did not hold the breakout level, falling below it on 2026-06-18.</span></div></div>
     </article>
     
 
@@ -550,46 +607,52 @@
           <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">6.2/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:62%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">6.3/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:63%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates a mixed trend with moderate strength and no clear breakout or strong momentum.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 6.2/10 reflects solid business quality and industry positioning but elevated debt and stretched valuation temper enthusiasm.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral; monitor for technical improvement or fundamental catalysts.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Positive; Johnson &amp; Johnson&#x27;s durable moat and compounding potential justify long-term confidence.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on dips or weakness, focusing on technical support levels and improving fundamentals.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the resistance level of 230.07 on 2026-06-09 with a strong move to 237.71.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level of 230.07 on 2026-06-18, failing to hold the retest.</span></div></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$229.53&nbsp;&ndash;&nbsp;$238.71</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $220.05</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with some signs of weakness, suggesting the stock is neither strongly uptrending nor clearly downtrending.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 6.3/10 reflects a strong competitive moat and resilient industry but is weighed down by weak EPS growth and elevated debt levels.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">ACCUMULATE for long-term investors due to its strong moat and industry resilience, despite near-term technical and fundamental concerns.</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks to lower risk, focusing on entry points where technical weakness aligns with improved valuation metrics (e.g., lower debt or stronger EPS trends).</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID because its current price ($228.39) is slightly below the SMA50 (-0.5%) and modestly above the SMA150 (+1.8%), indicating a neutral to moderate trend.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone&#x27;s lower bound is anchored at the SMA50 ($229.53), with floor support at the recent 3-month low ($220.05).</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of ~230.67 on 2026-06-09 with a strong move to 237.71.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level (~230.67) on 2026-06-18, failing to hold the retest.</span></div></div>
     </article>
     
 
     <article class="entry hold">
       <header class="entry-head">
         <div class="entry-id">
-          <span class="ticker">UNP</span>
+          <span class="ticker">UPS</span>
           <span class="sector">Industrials</span>
         </div>
         <span class="tag tag-hold">WAIT FOR PULLBACK</span>
       </header>
-      <div class="entry-name">Union Pacific Corporation</div>
+      <div class="entry-name">United Parcel Service, Inc.</div>
       <div class="meters">
         <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
+          <div class="meter-label">TECH <span class="meter-num">5/12</span></div>
+          <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">5.9/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:59%"></div></div>
+          <div class="meter-label">FUND <span class="meter-num">5.7/10</span></div>
+          <div class="meter-track"><div class="meter-fill alt" style="width:57%"></div></div>
         </div>
       </div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates a neutral trend with no strong uptrend or downtrend signals.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 5.9/10 suggests a stable but not exceptional business with concerns around debt and growth.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral; the stock lacks strong technical momentum for short-term gains.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Moderate hold; the company&#x27;s solid cash flow and moat support stability, but limited upside due to valuation and growth concerns.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips below key support levels, focusing on long-term stability rather than short-term gains.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above 269.86 on 2026-05-27 with a strong move.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">Price did not successfully retest and hold the breakout level, falling back through it on 2026-05-28.</span></div></div>
+      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$103.11&nbsp;&ndash;&nbsp;$107.24</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $93.23</span></div>
+      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 5/12 indicates UPS is currently weak and below its trend, lacking strong momentum or breakout signals.</span></div>
+<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 5.7/10 reflects UPS&#x27;s strong moat and cash flow but highlights concerns about recent revenue declines and high debt.</span></div>
+<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
+<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">ACCUMULATE</span></div>
+<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on price weakness or technical improvement, focusing on long-term industry prospects and UPS&#x27;s competitive advantages.</span></div>
+<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because its current price ($104.86) is only +1.7% above the SMA50 ($103.11) and +3.3% above the SMA150 ($101.56), indicating it has recently crossed key moving averages (golden cross occurred 13 days ago) but hasn&#x27;t yet shown sustained higher highs.</span></div>
+<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($103.11–$107.24) is anchored by the SMA50 ($103.11) at its lower bound, with floor support at the recent 3-month low ($93.23).</span></div>
+<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance observed in the last 40 trading days.</span></div>
+<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
     </article>
     
     </div>

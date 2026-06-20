@@ -91,6 +91,77 @@ def micha_criteria_6_to_12_code(data, benchmark_data):
     results["12_rs_vs_sp500"] = bool(stock_return > bench_return)
 
     return results
+def compute_price_levels(data):
+    """Extract real numeric price/SMA levels for cycle and buy-zone calculations."""
+    close = data["Close"]
+    sma50 = close.rolling(window=50).mean()
+    sma150 = close.rolling(window=150).mean()
+
+    price_now = float(close.iloc[-1])
+    sma50_val = float(sma50.iloc[-1])
+    sma150_val = float(sma150.iloc[-1])
+
+    # how far extended above each SMA
+    price_vs_sma50_pct  = (price_now - sma50_val)  / sma50_val  * 100
+    price_vs_sma150_pct = (price_now - sma150_val) / sma150_val * 100
+
+    # support levels (reuse same windows as criterion 11)
+    recent_3m_low  = float(close.iloc[-63:].min())
+    recent_3m_high = float(close.iloc[-63:].max())
+    prior_3m_low   = float(close.iloc[-126:-63].min())
+    hist = close.iloc[-252:] if len(close) >= 252 else close
+    week_52_low = float(hist.min())
+
+    # how many trading days ago did SMA50 cross above SMA150? (50-day lookback)
+    window = 51  # 51 points → 50 consecutive pairs
+    sma50_w  = sma50.iloc[-window:]
+    sma150_w = sma150.iloc[-window:]
+    was_below    = sma50_w.shift(1) <= sma150_w.shift(1)
+    is_above     = sma50_w > sma150_w
+    cross_mask   = was_below & is_above
+    golden_cross_days_ago = int(cross_mask.values[::-1].argmax()) if cross_mask.any() else None
+
+    return {
+        "price_now":            price_now,
+        "sma50":                sma50_val,
+        "sma150":               sma150_val,
+        "price_vs_sma50_pct":   price_vs_sma50_pct,
+        "price_vs_sma150_pct":  price_vs_sma150_pct,
+        "recent_3m_low":        recent_3m_low,
+        "recent_3m_high":       recent_3m_high,
+        "prior_3m_low":         prior_3m_low,
+        "week_52_low":          week_52_low,
+        "golden_cross_days_ago": golden_cross_days_ago,
+    }
+
+
+def classify_cycle_stage(criteria, price_levels):
+    """Classify the stock's trend cycle stage using computed signals only."""
+    if not criteria.get("4_sma50_above_sma150"):
+        return "NONE"
+
+    pct_above = price_levels["price_vs_sma50_pct"]
+    cross_days = price_levels["golden_cross_days_ago"]
+
+    if cross_days is not None and cross_days <= 50 and pct_above < 10:
+        return "EARLY"
+    if pct_above >= 22:
+        return "LATE"
+    return "MID"
+
+
+def compute_buy_zone(price_levels, cycle_stage):
+    """Return a code-grounded accumulation price range. No AI numbers."""
+    if cycle_stage == "NONE":
+        return None
+    sma50 = price_levels["sma50"]
+    return {
+        "low":   round(sma50, 2),
+        "high":  round(sma50 * 1.04, 2),
+        "floor": round(price_levels["recent_3m_low"], 2),
+    }
+
+
 def full_micha_analysis(ticker, data, benchmark_data):
     """Run all 12 Micha criteria (10 code + 2 AI) and return combined results."""
     from ai_layer import judge_breakout_and_retest
@@ -146,7 +217,7 @@ def analyze_stock(ticker, benchmark_data):
     """Run the COMPLETE analysis (all 3 parts) for one stock."""
     from data import get_price_history
     from fundamentals import get_fundamentals
-    from ai_layer import peter_lynch_score, combined_verdict
+    from ai_layer import peter_lynch_score, combined_verdict, analyze_cycle_and_zones
 
     data = get_price_history(ticker)
 
@@ -160,6 +231,13 @@ def analyze_stock(ticker, benchmark_data):
     # Part 3: combined verdict
     verdict = combined_verdict(ticker, micha, peter)
 
+    # Part 4: cycle stage & buy zone (code computes numbers; AI writes prose)
+    price_levels = compute_price_levels(data)
+    cycle_stage  = classify_cycle_stage(micha["criteria"], price_levels)
+    buy_zone     = compute_buy_zone(price_levels, cycle_stage)
+    cycle_info   = analyze_cycle_and_zones(ticker, cycle_stage, price_levels, buy_zone, micha["criteria"]) \
+                   if buy_zone else {}
+
     return {
         "ticker": ticker,
         "name": fundamentals.get("name", ticker),
@@ -170,4 +248,9 @@ def analyze_stock(ticker, benchmark_data):
         "peter_score": peter["peter_score"] if peter else None,
         "peter_summary": peter["summary"] if peter else "",
         "verdict": verdict,
+        "cycle_stage":           cycle_stage,
+        "cycle_stage_reasoning": cycle_info.get("cycle_stage_reasoning", ""),
+        "buy_zone":              buy_zone,
+        "buy_zone_narrative":    cycle_info.get("buy_zone_narrative", ""),
+        "price_levels":          price_levels,
     }
