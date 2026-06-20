@@ -23,10 +23,13 @@ def micha_criteria_1_to_5(data):
     results["3_price_above_sma50"] = price_now > sma50_now
     results["4_sma50_above_sma150"] = sma50_now > sma150_now
 
-    # Golden cross: sma50 is above sma150 now, but was below it recently
-    sma50_past = sma50.iloc[-21]
-    sma150_past_for_cross = sma150.iloc[-21]
-    cross_happened = (sma50_now > sma150_now) and (sma50_past <= sma150_past_for_cross)
+    # Golden cross: SMA50 crossed above SMA150 within last 25 trading days AND is still above today
+    window = 26  # 26 points → 25 consecutive pairs
+    sma50_w = sma50.iloc[-window:]
+    sma150_w = sma150.iloc[-window:]
+    was_below = sma50_w.shift(1) <= sma150_w.shift(1)
+    is_above  = sma50_w > sma150_w
+    cross_happened = bool((was_below & is_above).any()) and (sma50_now > sma150_now)
     results["5_golden_cross_recent"] = cross_happened
 
     return results
