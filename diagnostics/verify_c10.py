@@ -5,7 +5,7 @@ Slides through the last ~252 trading days for every stock in PORTFOLIO + WATCHLI
 re-evaluating the criterion at each point using only data available up to that day.
 Reports fire rate, raw prior_vol/background_vol ratios, and data-quality warnings.
 
-Run: python verify_c10.py
+Run: python diagnostics/verify_c10.py
 """
 
 import sys
