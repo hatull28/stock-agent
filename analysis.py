@@ -60,15 +60,17 @@ def micha_criteria_6_to_12_code(data, benchmark_data):
     results["6_atr_shock_recent"] = bool((recent_pct_moves > (atr_pct + 3)).any())
 
     # --- 9: Volume expansion (recent volume above its average) ---
-    avg_vol_50 = volume.rolling(window=50).mean()
+    # Use days 21-70 ago as the baseline: excludes both the dry-up window (days 6-20)
+    # and the expansion window (days 1-5), so neither contaminates the reference.
+    background_vol = volume.iloc[-70:-20].mean()
     recent_vol = volume.iloc[-5:].mean()          # last 5 days
-    # expansion = recent volume at least 1.5x the 50-day average
-    results["9_volume_expansion"] = bool(recent_vol > 1.5 * avg_vol_50.iloc[-1])
+    # expansion = recent volume at least 1.25x the background average
+    results["9_volume_expansion"] = bool(recent_vol > 1.25 * background_vol)
 
     # --- 10: Volume dry-up (a quiet stretch existed before recent action) ---
-    # look at days 6-20 ago: was volume unusually low vs the 50-day average?
+    # look at days 6-20 ago: was volume below 90% of the background average?
     prior_vol = volume.iloc[-20:-5].mean()
-    results["10_volume_dryup_before"] = bool(prior_vol < 0.8 * avg_vol_50.iloc[-1])
+    results["10_volume_dryup_before"] = bool(prior_vol < 0.9 * background_vol)
 
     # --- 11: Higher highs & higher lows (uptrend structure) ---
     # compare the most recent ~3 months to the prior ~3 months
