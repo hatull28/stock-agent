@@ -1,687 +1,1525 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Wire — Daily Stock Briefing</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f1620;
-    --panel: #161f2b;
-    --panel-2: #1b2633;
-    --ink: #e8eef5;
-    --ink-dim: #8da0b5;
-    --line: #263444;
-    --amber: #f2b134;
-    --go: #34d399;
-    --hold: #f2b134;
-    --stop: #f26d6d;
-    --neutral: #6b7d92;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Spectral', Georgia, serif;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>The Wire &#8212; SATURDAY, JUNE 20, 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ---- masthead ---- */
-  .masthead {
-    border-bottom: 2px solid var(--amber);
-    padding: 40px 0 18px;
-    margin-bottom: 8px;
-  }
-  .eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.32em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin: 0 0 10px;
-  }
-  .title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: clamp(42px, 8vw, 86px);
-    letter-spacing: -0.03em;
-    line-height: 0.92;
-    margin: 0;
-  }
-  .title .the { color: var(--ink-dim); font-weight: 400; }
-  .meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-top: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--ink-dim);
-    letter-spacing: 0.05em;
-  }
-  .readout b { color: var(--ink); }
+:root, [data-theme="light"] {
+  --paper:    #f5f0e8;
+  --ink:      #0c0c0c;
+  --ink-dim:  #4a4a4a;
+  --rule:     #0c0c0c;
+  --go:       #1a6b2a;
+  --stop:     #b51f1f;
+  --hold:     #7a5c00;
+  --neutral:  #5a5a5a;
+  --card-bg:  #faf6ed;
+  --pass-bg:  #d4f0d4;
+  --fail-bg:  #f7e0e0;
+}
+[data-theme="dark"] {
+  --paper:    #0c0c0c;
+  --ink:      #e8eef5;
+  --ink-dim:  #8da0b5;
+  --rule:     #444;
+  --go:       #34d399;
+  --stop:     #f26d6d;
+  --hold:     #f2b134;
+  --neutral:  #6b7d92;
+  --card-bg:  #111827;
+  --pass-bg:  #0d2a1a;
+  --fail-bg:  #2a0d0d;
+}
 
-  /* ---- section labels ---- */
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 54px 0 18px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    justify-content: space-between;
-  }
-  .section-label .count { color: var(--amber); }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 16px;
+  line-height: 1.65;
+  transition: background 0.25s, color 0.25s;
+}
 
-  /* ---- lead briefing ---- */
-  .lead {
-    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--amber);
-    padding: 30px 34px;
-    margin-top: 18px;
-    border-radius: 2px;
-  }
-  .lead p { margin: 0 0 14px; font-size: 17px; color: #d6e0eb; }
-  .lead p:first-of-type::first-letter {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 3.1em;
-    float: left;
-    line-height: 0.8;
-    padding: 6px 12px 0 0;
-    color: var(--amber);
-  }
-  .lead-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 0.2em;
-    color: var(--amber);
-    margin: 22px 0 10px;
-  }
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+}
 
-  /* ---- entries grid ---- */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-    gap: 16px;
-  }
-  .entry {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-top: 2px solid var(--neutral);
-    border-radius: 2px;
-    padding: 18px 20px 20px;
-    transition: transform .15s ease, border-color .15s ease;
-  }
-  .entry:hover { transform: translateY(-2px); }
-  .entry.go { border-top-color: var(--go); }
-  .entry.hold { border-top-color: var(--hold); }
-  .entry.stop { border-top-color: var(--stop); }
-  .entry-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .entry-id { display: flex; flex-direction: column; gap: 3px; }
-  .ticker {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 26px;
-    letter-spacing: -0.02em;
-  }
-  .sector {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-  }
-  .entry-name {
-    font-size: 13px;
-    color: var(--ink-dim);
-    margin: 2px 0 14px;
-    font-style: italic;
-  }
-  .tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 5px 9px;
-    border-radius: 2px;
-    white-space: nowrap;
-    text-align: right;
-  }
-  .tag-go { background: rgba(52,211,153,.14); color: var(--go); border: 1px solid rgba(52,211,153,.3); }
-  .tag-hold { background: rgba(242,177,52,.14); color: var(--hold); border: 1px solid rgba(242,177,52,.3); }
-  .tag-stop { background: rgba(242,109,109,.14); color: var(--stop); border: 1px solid rgba(242,109,109,.3); }
-  .tag-neutral { background: rgba(107,125,146,.14); color: var(--neutral); border: 1px solid rgba(107,125,146,.3); }
+/* ── Masthead ──────────────────────────────────────────────────────────────── */
+.masthead { padding: 1.75rem 0 0; margin-bottom: 2.25rem; }
 
-  /* ---- meters ---- */
-  .meters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
-  .meter-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    color: var(--ink-dim);
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 4px;
-  }
-  .meter-num { color: var(--ink); }
-  .meter-track {
-    height: 6px;
-    background: var(--panel-2);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .meter-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #2b6cb0, #4299e1);
-    border-radius: 3px;
-  }
-  .meter-fill.alt { background: linear-gradient(90deg, #b7791f, var(--amber)); }
+.masthead-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 0.6rem;
+}
+.eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.15rem;
+}
+.logotype {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(3rem, 9vw, 7.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.masthead-byline {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+  margin-top: 0.15rem;
+}
+.theme-toggle {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0.4rem 0.9rem;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  align-self: center;
+}
+.theme-toggle:hover { background: var(--ink); color: var(--paper); }
 
-  /* ---- reasons ---- */
-  .reasons {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px dashed var(--line);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .reason { display: grid; grid-template-columns: 78px 1fr; gap: 10px; }
-  .reason-key {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--amber);
-    padding-top: 2px;
-  }
-  .reason-val { font-size: 13px; color: #c4d1de; line-height: 1.5; }
+.masthead-rule {
+  border: none;
+  border-top: 5px solid var(--rule);
+  margin: 0;
+}
+.edition-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  border-top: 1px solid var(--rule);
+  padding: 0.4rem 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.edition-divider { color: var(--rule); }
+.edition-signal strong { color: var(--go); }
 
-  /* ---- cycle strip ---- */
-  .cycle-strip {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 14px 0 2px;
-    padding: 9px 12px;
-    background: var(--panel-2);
-    border-radius: 2px;
-    border: 1px solid var(--line);
-    flex-wrap: wrap;
-  }
-  .cycle-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    padding: 3px 8px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cycle-early { background: rgba(52,211,153,.14); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
-  .cycle-mid   { background: rgba(66,153,225,.14); color: #4299e1; border: 1px solid rgba(66,153,225,.3); }
-  .cycle-late  { background: rgba(242,177,52,.14); color: #f2b134; border: 1px solid rgba(242,177,52,.3); }
-  .cycle-none  { background: rgba(107,125,146,.14); color: #6b7d92; border: 1px solid rgba(107,125,146,.3); }
-  .buy-range {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--ink);
-    letter-spacing: 0.03em;
-  }
-  .floor-hint {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--ink-dim);
-    letter-spacing: 0.03em;
-  }
+/* ── Section rule ──────────────────────────────────────────────────────────── */
+.section { margin-bottom: 3rem; }
 
-  /* ---- price line ---- */
-  .price-line {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    margin: 2px 0 12px;
-  }
-  .price-now { color: var(--ink); font-weight: 500; }
-  .price-chg.up { color: var(--go); }
-  .price-chg.dn { color: var(--stop); }
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.section-rule::before, .section-rule::after {
+  content: "";
+  flex: 1;
+  border-top: 2px solid var(--rule);
+}
+.section-rule-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+.section-rule-label {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.section-rule-count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  color: var(--ink-dim);
+}
 
-  /* ---- footer ---- */
-  .foot {
-    margin-top: 64px;
-    padding-top: 20px;
-    border-top: 1px solid var(--line);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-dim);
-    letter-spacing: 0.06em;
-    text-align: center;
-  }
-  .foot .warn { color: var(--ink); }
+/* ── Heat map ──────────────────────────────────────────────────────────────── */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 3px solid var(--rule);
+}
+.heat-cell {
+  position: relative;
+  overflow: hidden;
+  height: 95px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  transition: filter 0.15s;
+}
+.heat-cell:hover { filter: brightness(0.92); }
+.heat-cell__fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 5px;
+}
+.heat-cell--go    .heat-cell__fill { background: var(--go); }
+.heat-cell--hold  .heat-cell__fill { background: var(--hold); }
+.heat-cell--stop  .heat-cell__fill { background: var(--stop); }
+.heat-cell--neutral .heat-cell__fill { background: var(--neutral); }
 
-  @media (max-width: 560px) {
-    .grid { grid-template-columns: 1fr; }
-    .lead { padding: 22px 20px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .entry { transition: none; }
-  }
+.heat-cell__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 0.65rem 0.85rem;
+}
+.heat-ticker {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.heat-score {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  margin-top: 0.2rem;
+}
+.heat-action {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+.heat-cell--go    .heat-action { color: var(--go); }
+.heat-cell--hold  .heat-action { color: var(--hold); }
+.heat-cell--stop  .heat-action { color: var(--stop); }
+.heat-cell--neutral .heat-action { color: var(--neutral); }
+
+/* ── Briefing ──────────────────────────────────────────────────────────────── */
+.briefing-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 3rem;
+  align-items: start;
+}
+.feature-kicker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.35rem;
+}
+.feature-hed {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  margin-bottom: 0.85rem;
+  border-bottom: 3px solid var(--rule);
+  padding-bottom: 0.65rem;
+}
+.feature-article > p {
+  margin-bottom: 1rem;
+  text-align: justify;
+  hyphens: auto;
+}
+.feature-article > p.drop-cap::first-letter {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 4.5em;
+  line-height: 0.75;
+  float: left;
+  margin: 0.04em 0.08em 0 0;
+}
+.feature-article h3.brief-sub {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 1.5rem 0 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.3rem;
+}
+.pull-quote {
+  border-left: 4px solid var(--rule);
+  margin: 1.5rem 0;
+  padding: 0.6rem 1.2rem;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  quotes: none;
+}
+.briefing-sidebar { position: sticky; top: 1rem; }
+.sidebar-block {
+  border: 1.5px solid var(--rule);
+  background: var(--card-bg);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+.sidebar-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+/* ── Dispatch grids ────────────────────────────────────────────────────────── */
+.dispatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.suggest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.card, .sug-card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1.5px solid var(--rule);
+  border-top: 4px solid var(--neutral);
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  text-align: left;
+}
+.card:hover, .sug-card:hover {
+  box-shadow: 4px 4px 0 var(--rule);
+  transform: translate(-2px, -2px);
+}
+.card--go    { border-top-color: var(--go);   }
+.card--hold  { border-top-color: var(--hold); }
+.card--stop  { border-top-color: var(--stop); }
+.card--neutral { border-top-color: var(--neutral); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+.card-logo {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.card-logo-fallback {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.card-id { flex: 1; min-width: 0; }
+.card-ticker {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.3rem;
+  line-height: 1;
+  display: block;
+}
+.card-name {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Action tags ───────────────────────────────────────────────────────────── */
+.action-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border: 1.5px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.action-tag--go      { border-color: var(--go);   color: var(--go);   }
+.action-tag--hold    { border-color: var(--hold);  color: var(--hold); }
+.action-tag--stop    { border-color: var(--stop);  color: var(--stop); }
+.action-tag--neutral { border-color: var(--neutral); color: var(--neutral); }
+
+/* ── Price ─────────────────────────────────────────────────────────────────── */
+.card-price {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.price-now { font-weight: 700; font-size: 0.9rem; }
+.price-change { font-size: 0.72rem; }
+.price-change.up   { color: var(--go);   }
+.price-change.down { color: var(--stop); }
+
+/* ── Sparkline ─────────────────────────────────────────────────────────────── */
+.sparkline {
+  display: block;
+  width: 100% !important;
+  height: 52px !important;
+  margin-bottom: 0.6rem;
+}
+
+/* ── Score bars ────────────────────────────────────────────────────────────── */
+.card-bars { margin-bottom: 0.55rem; }
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+.score-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  width: 2.8rem;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+.score-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(0,0,0,0.1);
+  position: relative;
+}
+[data-theme="dark"] .score-track { background: rgba(255,255,255,0.1); }
+.score-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+}
+.score-fill--tech { background: var(--go);   }
+.score-fill--fund { background: var(--hold); }
+.score-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  width: 3rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Card meta ─────────────────────────────────────────────────────────────── */
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.cycle-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid;
+  text-transform: uppercase;
+}
+.cycle-badge--early   { border-color: var(--go);      color: var(--go);      }
+.cycle-badge--mid     { border-color: var(--hold);     color: var(--hold);    }
+.cycle-badge--late    { border-color: var(--stop);     color: var(--stop);    }
+.cycle-badge--none    { border-color: var(--neutral);  color: var(--neutral); }
+.card-sector {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+}
+.card-oneliner {
+  font-size: 0.83rem;
+  color: var(--ink-dim);
+  line-height: 1.45;
+  font-style: italic;
+  margin-bottom: 0.4rem;
+}
+.card-cta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  color: var(--ink);
+  opacity: 0;
+  display: block;
+  transition: opacity 0.15s;
+  letter-spacing: 0.04em;
+}
+.card:hover .card-cta, .sug-card:hover .card-cta { opacity: 0.6; }
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: 3rem;
+  border-top: 5px solid var(--rule);
+  padding-top: 3px;
+}
+.footer::before {
+  content: "";
+  display: block;
+  border-top: 1px solid var(--rule);
+  margin-bottom: 1.1rem;
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.footer-disclaimer {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+.footer-sig {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── Panel overlay ─────────────────────────────────────────────────────────── */
+.panel-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+}
+.panel-overlay--visible { display: block; }
+
+/* ── Detail panel ──────────────────────────────────────────────────────────── */
+.detail-panel {
+  position: fixed;
+  right: 0; top: 0;
+  height: 100vh;
+  width: 500px;
+  max-width: 100vw;
+  overflow-y: auto;
+  background: var(--paper);
+  border-left: 4px solid var(--rule);
+  transform: translateX(105%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index: 200;
+}
+.detail-panel--open { transform: translateX(0); }
+.panel-content { padding-bottom: 3rem; }
+
+.panel-close {
+  position: absolute;
+  top: 0.9rem; right: 0.9rem;
+  width: 2rem; height: 2rem;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.panel-close:hover { background: var(--ink); color: var(--paper); }
+
+/* ── Panel header ──────────────────────────────────────────────────────────── */
+.panel-header {
+  position: sticky;
+  top: 0;
+  padding: 1.1rem 1.25rem 0.8rem;
+  background: var(--paper);
+  border-bottom: 2px solid var(--rule);
+  z-index: 5;
+}
+.panel-header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.45rem;
+  padding-right: 2.5rem;
+}
+.panel-logo {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  object-fit: contain;
+  border: 1.5px solid var(--rule);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.panel-logo-fallback {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.panel-title-wrap { flex: 1; min-width: 0; }
+.panel-ticker {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.65rem;
+  line-height: 1;
+  display: block;
+}
+.panel-name {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel-price {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.83rem;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.panel-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.panel-sector {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Panel body ────────────────────────────────────────────────────────────── */
+.panel-body { padding: 1.25rem; }
+.panel-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.panel-section:last-child { border-bottom: none; }
+.panel-section-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 0.35rem;
+}
+.panel-tally {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ── Panel: The Story ──────────────────────────────────────────────────────── */
+.panel-story p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+  text-align: justify;
+  hyphens: auto;
+}
+.panel-story p.panel-drop-cap::first-letter {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 3.5em;
+  line-height: 0.75;
+  float: left;
+  margin: 0.04em 0.08em 0 0;
+}
+.panel-pull {
+  border-left: 4px solid var(--rule);
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  font-style: italic;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  quotes: none;
+}
+
+/* ── Panel: Micha Method ───────────────────────────────────────────────────── */
+.crit-list { display: flex; flex-direction: column; }
+.crit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.28rem 0.4rem;
+}
+.crit-row:nth-child(odd) { background: rgba(0,0,0,0.03); }
+[data-theme="dark"] .crit-row:nth-child(odd) { background: rgba(255,255,255,0.03); }
+.crit-name {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--ink);
+}
+.crit-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+.crit-pass { border-color: var(--go);   color: var(--go);   background: var(--pass-bg); }
+.crit-fail { border-color: var(--stop); color: var(--stop); background: var(--fail-bg); }
+.crit-reason {
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--ink-dim);
+  padding: 0.2rem 0.5rem 0.4rem 1.2rem;
+  border-left: 2px solid var(--rule);
+  margin: 0.1rem 0 0.4rem 0.75rem;
+  line-height: 1.45;
+}
+
+/* ── Panel: Peter Lynch ────────────────────────────────────────────────────── */
+.peter-bars { margin-bottom: 1rem; }
+.peter-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+.peter-bar-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  color: var(--ink-dim);
+  width: 10.5rem;
+  flex-shrink: 0;
+}
+.peter-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(0,0,0,0.1);
+  position: relative;
+}
+[data-theme="dark"] .peter-bar-track { background: rgba(255,255,255,0.1); }
+.peter-bar-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--hold);
+}
+.peter-bar-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  color: var(--ink-dim);
+  width: 2.5rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+.key-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.key-metric {
+  border: 1.5px solid var(--rule);
+  padding: 0.5rem 0.75rem;
+  background: var(--card-bg);
+}
+.key-metric-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  color: var(--ink-dim);
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.2rem;
+}
+.key-metric-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: block;
+}
+
+/* ── Panel: The Verdict ────────────────────────────────────────────────────── */
+.verdict-action {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid;
+}
+.verdict-action--go      { color: var(--go);   border-color: var(--go);   }
+.verdict-action--hold    { color: var(--hold);  border-color: var(--hold); }
+.verdict-action--stop    { color: var(--stop);  border-color: var(--stop); }
+.verdict-action--neutral { color: var(--neutral); border-color: var(--neutral); }
+
+.verdict-body p {
+  font-size: 0.87rem;
+  line-height: 1.6;
+  margin-bottom: 0.65rem;
+}
+.verdict-body strong {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.buy-zone-box {
+  border: 2px solid var(--go);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+.bz-range {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--go);
+  margin-bottom: 0.15rem;
+}
+.bz-floor {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+.no-zone {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--stop);
+  border: 1.5px solid var(--stop);
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.75rem;
+  line-height: 1.45;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 1000px) {
+  .briefing-layout { grid-template-columns: 1fr; }
+  .briefing-sidebar { position: static; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .sidebar-block { flex: 1; min-width: 220px; }
+}
+@media (max-width: 820px) {
+  .dispatch-grid { grid-template-columns: 1fr; }
+  .suggest-grid  { grid-template-columns: repeat(2, 1fr); }
+  .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 1rem 2rem; }
+  .suggest-grid  { grid-template-columns: 1fr; }
+  .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
+  .logotype { font-size: 2.8rem; }
+  .detail-panel { width: 100vw; }
+}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="masthead">
-      <p class="eyebrow">Market Dispatch · Automated Daily Edition</p>
-      <h1 class="title"><span class="the">The</span> Wire</h1>
-      <div class="meta-row">
-        <span class="dateline">Saturday, June 20, 2026 · 21:27</span>
-        <span class="readout">PORTFOLIO SIGNAL · <b>3/8</b> accumulate</span>
-      </div>
-    </header>
+<div class="wrap">
 
-    <div class="section-label"><span>The Briefing</span><span class="count">lead</span></div>
-    <div class="lead">
-      <p>Daily Stock Briefing</p>
-<p>Market Tone: Tech-heavy portfolios remain strong but face valuation headwinds; patience is key as several holdings suggest waiting for pullbacks before adding.</p>
-<h3 class="lead-sub">PORTFOLIO CHECK-IN</h3>
-<p>Wait for Pullback (Tech Leaders):</p>
-<p>- AAPL, NVDA, MSFT, AMZN, META – Technically weak or overextended short-term; fundamentals remain strong, but hold or wait for better entry points.</p>
-<p>- GOOGL, TSM, ASML – Strong long-term prospects; accumulate on dips given their dominant industry positions and growth potential.</p>
-<p>SUGGESTIONS: Diversify Beyond Tech</p>
-<p>- JPM (Financials): Strong fundamentals, bullish long-term.</p>
-<p>- JNJ (Healthcare): Resilient industry, defensive moat.</p>
-<p>- UNP (Industrials): Durable cash flows, cyclical upside.</p>
-<p>Bottom Line: Stay selective—accumulate strong tech names on pullbacks, diversify into financials, healthcare, and industrials for balance.</p>
+  <header class="masthead">
+    <div class="masthead-top">
+      <div class="masthead-brand">
+        <p class="eyebrow">Market Dispatch &middot; Automated Daily Edition</p>
+        <h1 class="logotype">The Wire</h1>
+        <p class="masthead-byline">by Tal Haran</p>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle day/night">
+        &#9728; Morning &nbsp;/&nbsp; &#9790; Night
+      </button>
+    </div>
+    <hr class="masthead-rule">
+    <div class="edition-row">
+      <span class="dateline">SATURDAY, JUNE 20, 2026</span>
+      <span class="edition-divider">&middot;</span>
+      <span class="edition-signal">Portfolio Signal &nbsp;&middot;&nbsp; <strong>2/8</strong> accumulate</span>
+      <span class="edition-divider">&middot;</span>
+      <span class="edition-vol">Vol. 1</span>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Portfolio Heat Map</span>
+      </div>
+    </div>
+    <div class="heatmap-grid">
+<div class="heat-cell heat-cell--hold" onclick="openPanel('AAPL')" role="button" tabindex="0" aria-label="AAPL: WAIT"><div class="heat-cell__fill" style="width:67%"></div><div class="heat-cell__content"><span class="heat-ticker">AAPL</span><span class="heat-score">8/12</span><span class="heat-action">WAIT</span></div></div>
+<div class="heat-cell heat-cell--go" onclick="openPanel('NVDA')" role="button" tabindex="0" aria-label="NVDA: ACCUMULATE"><div class="heat-cell__fill" style="width:42%"></div><div class="heat-cell__content"><span class="heat-ticker">NVDA</span><span class="heat-score">5/12</span><span class="heat-action">ACCUMULATE</span></div></div>
+<div class="heat-cell heat-cell--go" onclick="openPanel('MSFT')" role="button" tabindex="0" aria-label="MSFT: ACCUMULATE"><div class="heat-cell__fill" style="width:8%"></div><div class="heat-cell__content"><span class="heat-ticker">MSFT</span><span class="heat-score">1/12</span><span class="heat-action">ACCUMULATE</span></div></div>
+<div class="heat-cell heat-cell--hold" onclick="openPanel('GOOGL')" role="button" tabindex="0" aria-label="GOOGL: WAIT"><div class="heat-cell__fill" style="width:50%"></div><div class="heat-cell__content"><span class="heat-ticker">GOOGL</span><span class="heat-score">6/12</span><span class="heat-action">WAIT</span></div></div>
+<div class="heat-cell heat-cell--hold" onclick="openPanel('TSM')" role="button" tabindex="0" aria-label="TSM: WAIT"><div class="heat-cell__fill" style="width:58%"></div><div class="heat-cell__content"><span class="heat-ticker">TSM</span><span class="heat-score">7/12</span><span class="heat-action">WAIT</span></div></div>
+<div class="heat-cell heat-cell--hold" onclick="openPanel('AMZN')" role="button" tabindex="0" aria-label="AMZN: WAIT"><div class="heat-cell__fill" style="width:42%"></div><div class="heat-cell__content"><span class="heat-ticker">AMZN</span><span class="heat-score">5/12</span><span class="heat-action">WAIT</span></div></div>
+<div class="heat-cell heat-cell--hold" onclick="openPanel('ASML')" role="button" tabindex="0" aria-label="ASML: WAIT"><div class="heat-cell__fill" style="width:75%"></div><div class="heat-cell__content"><span class="heat-ticker">ASML</span><span class="heat-score">9/12</span><span class="heat-action">WAIT</span></div></div>
+<div class="heat-cell heat-cell--hold" onclick="openPanel('META')" role="button" tabindex="0" aria-label="META: WAIT"><div class="heat-cell__fill" style="width:0%"></div><div class="heat-cell__content"><span class="heat-ticker">META</span><span class="heat-score">0/12</span><span class="heat-action">WAIT</span></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Today&#8217;s Briefing</span>
+      </div>
+    </div>
+    <div class="briefing-layout">
+      <div class="briefing-body">
+        <p class="feature-kicker">Daily Market Intelligence</p>
+        <h2 class="feature-hed">The Morning Dispatch</h2>
+        <div class="feature-article">
+<p class="drop-cap">Market Tone</p>
+<p>The tech-heavy portfolio remains strong but faces valuation headwinds, suggesting a cautious approach for near-term entries. Diversification into non-tech sectors could provide stability amid potential volatility.</p>
+<h3 class="brief-sub">PORTFOLIO</h3>
+<h3 class="brief-sub">WAIT FOR PULLBACK:**</h3>
+<p>- **AAPL, GOOGL, TSM, ASML, META, AMZN**: These stocks exhibit strong fundamentals and long-term compounding potential but are currently overextended or richly valued. Hold or consider partial profits; wait for better entry points.</p>
+<p>- **NVDA, MSFT**: While both show exceptional growth and moats, their elevated valuations and technical resistance suggest accumulating on pullbacks.</p>
+<h3 class="brief-sub">SUGGESTIONS</h3>
+<blockquote class="pull-quote">- **NVDA, MSFT**: While both show exceptional growth and moats, their elevated valuations and technical resistance suggest accumulating on pullbacks.</blockquote>
+<p>Diversifiers to Strengthen Portfolio:**</p>
+<p>- **JPM (Financials)**: A solid buy now, offering stability and exposure to financial services.</p>
+<p>- **JNJ (Healthcare)**: A defensive play with steady growth; accumulate now.</p>
+<p>- **HON (Industrials)**: Exercise caution; wait for improved fundamentals or a pullback.</p>
+<p>Bottom Line</p>
+<p>Patience pays—wait for pullbacks in tech while diversifying into financials and healthcare for balance.</p>
 <p>Reminder: This is analysis, not financial advice.*</p>
+        </div>
+      </div>
+      <aside class="briefing-sidebar">
+        <div class="sidebar-block">
+          <span class="sidebar-label">Portfolio Composition</span>
+          <canvas id="radarChart" width="260" height="260"></canvas>
+        </div>
+        <div class="sidebar-block">
+          <span class="sidebar-label">Portfolio Ranking</span>
+          <canvas id="distChart" width="260" height="180"></canvas>
+        </div>
+      </aside>
     </div>
+  </section>
 
-    <div class="section-label"><span>Portfolio Holdings</span><span class="count">8 positions</span></div>
-    <div class="grid">
-      
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">AAPL</span>
-          <span class="sector">Technology</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Apple Inc.</div>
-      <div class="price-line"><span class="price-now">$298.01</span><span class="price-chg up">+2.06 (+0.70%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">8/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:67%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:78%"></div></div>
-        </div>
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Portfolio Dispatches</span>
+        <span class="section-rule-count">8 positions</span>
       </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$288.63&nbsp;&ndash;&nbsp;$300.18</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $246.40</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">AAPL is technically strong, showing an uptrend with solid momentum and volume support.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">AAPL is fundamentally strong with robust growth and a wide moat, but its valuation is elevated and debt levels are concerning.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or consider taking partial profits, as the stock is technically strong but may face valuation headwinds.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Buy, as Apple&#x27;s industry leadership, innovation, and compounding potential outweigh valuation concerns over time.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on dips or during market corrections, focusing on periods when the P/E ratio aligns more closely with historical averages.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because the current price ($298.01) is above both the SMA50 ($288.63) and SMA150 ($272.66), with higher highs &amp; lows, and a golden cross occurred recently (22 trading days ago).</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($288.63–$300.18) is anchored by the SMA50 ($288.63) as the lower bound, with floor support at $246.40.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">AAPL made a clean breakout above the 300 resistance level on 2026-05-20 with a strong move.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the 300 level on 2026-06-08, failing to hold the retest.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">NVDA</span>
-          <span class="sector">Technology</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">NVIDIA Corporation</div>
-      <div class="price-line"><span class="price-now">$210.69</span><span class="price-chg up">+6.04 (+2.95%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">5/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.3/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:83%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$209.12&nbsp;&ndash;&nbsp;$217.49</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $164.98</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 5/12 indicates NVDA is currently weak and below its trend, lacking strong momentum or breakout potential.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.3/10 highlights NVDA&#x27;s exceptional business quality, growth, and competitive moat, despite a weakened balance sheet.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Avoid or wait for a pullback, as the stock is technically weak and may face downward pressure.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Buy, as NVDA&#x27;s strong fundamentals suggest significant long-term compounding potential.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Gradually build a position during technical weakness or pullbacks, focusing on dollar-cost averaging to mitigate short-term volatility.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY because its price is only +0.8% above the SMA50 and +10.0% above the SMA150, with a golden cross occurring 36 trading days ago.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($209.12–$217.49) is anchored by the SMA50 at $209.12 as the lower bound, with floor support at $164.98.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above a recent resistance/consolidation occurred in the last 40 trading days.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">There was no breakout to retest in the last 40 trading days.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">MSFT</span>
-          <span class="sector">Technology</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Microsoft Corporation</div>
-      <div class="price-line"><span class="price-now">$379.40</span><span class="price-chg up">+0.49 (+0.13%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">1/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:8%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.6/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:86%"></div></div>
-        </div>
-      </div>
-      
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 1/12 indicates MSFT is currently weak/below trend, showing poor trend strength, breakouts, volume, and relative strength.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.6/10 reflects MSFT&#x27;s strong business quality, growth, valuation, and moat, making it a high-quality long-term investment.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Avoid or wait for technical improvement due to weak momentum and trend.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy due to exceptional fundamentals and compounding potential.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks to key support levels or when technical health improves (e.g., trend reversal, higher volume breakouts).</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance with a strong move on 2026-05-28, closing at 426.99 after a high of 429.49.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to the breakout level and hold it; instead, it continued to decline.</span></div></div>
-    </article>
-    
-
-    <article class="entry go">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">GOOGL</span>
-          <span class="sector">Communication Services</span>
-        </div>
-        <span class="tag tag-go">ACCUMULATE</span>
-      </header>
-      <div class="entry-name">Alphabet Inc.</div>
-      <div class="price-line"><span class="price-now">$368.03</span><span class="price-chg up">+4.24 (+1.17%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.2/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:82%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$367.19&nbsp;&ndash;&nbsp;$381.88</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $273.34</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates moderate trend strength with mixed signals, suggesting GOOGL is neither strongly uptrending nor clearly weak.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.2/10 reflects strong business quality, growth potential, and a durable moat, justifying a premium valuation.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term growth given Alphabet&#x27;s strong fundamentals and industry positioning.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks or weakness, as the technical score suggests potential for better entry points. Focus on long-term holding given the strong fundamentals.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID in its trend cycle because the current price ($368.03) is only +0.2% above the SMA50 ($367.19) and +11.6% above the SMA150 ($329.69), indicating moderate momentum without extreme highs or lows.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($367.19–$381.88) is anchored by the SMA50 ($367.19) as its lower bound, with floor support at the recent 3-month low ($273.34).</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">GOOGL made a clean breakout above the $370 resistance on 2026-04-30 with a strong move and high volume.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, price fell back below the $370 level on 2026-06-02, failing to hold the breakout level.</span></div></div>
-    </article>
-    
-
-    <article class="entry go">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">TSM</span>
-          <span class="sector">Technology</span>
-        </div>
-        <span class="tag tag-go">ACCUMULATE</span>
-      </header>
-      <div class="entry-name">Taiwan Semiconductor Manufacturing Company Limited</div>
-      <div class="price-line"><span class="price-now">$462.12</span><span class="price-chg up">+29.97 (+6.94%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">7/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.5/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:85%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$404.79&nbsp;&ndash;&nbsp;$420.98</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $315.76</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">TSM&#x27;s technical score of 7/12 indicates moderate trend strength with some bullish signals but not yet in a strong uptrend.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">TSM&#x27;s fundamental score of 8.5/10 reflects strong business quality, growth, and industry dominance, though valuation is slightly elevated.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">WAIT FOR PULLBACK</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">BUY NOW for long-term compounding potential given its strong fundamentals and moat.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks to mitigate short-term technical weakness, targeting a lower average cost. Focus on long-term holding given TSM&#x27;s robust fundamentals.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID in its trend cycle because the price is +14.2% above SMA50 and +31.5% above SMA150, indicating moderate upward momentum without extreme overextension.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($404.79–$420.98) is anchored by the SMA50 at $404.79 as the lower bound, with the floor support sitting at $315.76.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance at around 429.54 on 2026-05-27, followed by a strong move higher.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level on 2026-06-05, failing to hold the retest.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">AMZN</span>
-          <span class="sector">Consumer Cyclical</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Amazon.com, Inc.</div>
-      <div class="price-line"><span class="price-now">$244.39</span><span class="price-chg up">+6.89 (+2.90%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">5/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:42%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.0/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:80%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$257.10&nbsp;&ndash;&nbsp;$267.38</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $199.34</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 5/12 indicates AMZN is currently weak and below its trend, lacking strong momentum or breakout potential.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8/10 highlights AMZN&#x27;s strong business quality, growth potential, competitive moat, and long-term compounding ability.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to cautious, as technical weakness may lead to further downside or consolidation.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish, given AMZN&#x27;s robust fundamentals and industry leadership.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on pullbacks or technical support levels, such as near key moving averages or previous lows, to capitalize on long-term potential.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because it recently had a golden cross 30 trading days ago and is currently trading 4.3% above its SMA150 ($234.32) while maintaining higher highs and higher lows.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($257.10–$267.38) is anchored by the SMA50 ($257.10) as the lower bound, with the floor support sitting at $199.34.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance observed in the last 40 trading days.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
-    </article>
-    
-
-    <article class="entry go">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">ASML</span>
-          <span class="sector">Technology</span>
-        </div>
-        <span class="tag tag-go">ACCUMULATE</span>
-      </header>
-      <div class="entry-name">ASML Holding N.V.</div>
-      <div class="price-line"><span class="price-now">$1,929.68</span><span class="price-chg up">+61.85 (+3.31%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">9/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:75%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.6/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:76%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-late">LATE</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$1579.23&nbsp;&ndash;&nbsp;$1642.40</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $1251.23</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">ASML is technically strong, showing an uptrend with solid momentum and volume support.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">ASML is fundamentally strong with a dominant industry position, high-quality business, and compelling growth prospects, though valuation is elevated.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Hold or accumulate, as the stock is technically strong but may face short-term volatility due to valuation concerns.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Buy, as ASML&#x27;s fundamentals, growth potential, and industry tailwinds make it a compelling long-term investment.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or technical support levels to mitigate valuation risks while capitalizing on long-term growth.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as LATE in its trend cycle because the current price ($1929.68) is significantly above both the SMA50 (+22.2%) and SMA150 (+41.3%), indicating an extended upward move.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($1579.23–$1642.40) is anchored by the SMA50 ($1579.23) as the lower bound, with floor support at $1251.23.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance around 1708.32 on 2026-06-02 with a strong move.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price did not pull back to the breakout level to hold it, instead it continued to rise without a retest.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">META</span>
-          <span class="sector">Communication Services</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Meta Platforms, Inc.</div>
-      <div class="price-line"><span class="price-now">$577.22</span><span class="price-chg up">+9.64 (+1.70%) ▲</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">0/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:0%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">8.8/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:88%"></div></div>
-        </div>
-      </div>
-      
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 0/12 indicates Meta Platforms is currently weak and below its trend, with no signs of strength or momentum.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 8.8/10 highlights Meta Platforms&#x27; exceptional business quality, strong growth, and dominant moat, making it a fundamentally sound investment.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Avoid in the short term due to weak technicals and lack of momentum.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Strong buy for the long term given its robust fundamentals and industry leadership.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually by buying on pullbacks or technical support levels, ensuring a lower average cost basis while maintaining exposure to its long-term potential.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">No clean breakout above recent resistance observed in the last 40 trading days.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">No breakout occurred, hence no retest to evaluate.</span></div></div>
-    </article>
-    
     </div>
-
-    <div class="section-label"><span>Diversifier Dispatches</span><span class="count">new sectors</span></div>
-    <div class="grid">
-      
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">JPM</span>
-          <span class="sector">Financial Services</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">JPMorgan Chase &amp; Co.</div>
-      <div class="price-line"><span class="price-now">$325.22</span><span class="price-chg dn">-8.24 (-2.47%) ▼</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">7/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:58%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">7.5/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:75%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-early">EARLY</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$308.86&nbsp;&ndash;&nbsp;$321.22</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $281.40</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">JPMorgan Chase &amp; Co. is moderately strong technically, showing some trend strength and relative stability but not in a clear uptrend.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">JPMorgan Chase &amp; Co. has strong fundamentals, with solid growth, a robust moat, and reasonable valuation, making it a high-quality long-term investment.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral, as the technical score suggests limited upside momentum in the near term.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Bullish, given the company&#x27;s strong fundamentals and compounding potential.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position gradually on dips or weakness, focusing on key support levels to capitalize on long-term potential.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as EARLY in its trend cycle because its current price ($325.22) is +5.3% above SMA50 ($308.86) and +6.3% above SMA150 ($305.85), indicating recent breakout momentum.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($308.86–$321.22) is anchored by the SMA50 ($308.86) as the lower bound, with floor support at $281.40.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of 316.30 on 2026-06-16 with a strong move to 331.75.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back through the breakout level of 316.30 on 2026-06-18, failing to hold it.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">JNJ</span>
-          <span class="sector">Healthcare</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Johnson &amp; Johnson</div>
-      <div class="price-line"><span class="price-now">$228.39</span><span class="price-chg dn">-5.81 (-2.48%) ▼</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">6.3/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:63%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$229.53&nbsp;&ndash;&nbsp;$238.71</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $220.05</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates a neutral to slightly weak trend, with no clear breakout or strong momentum.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 6.3/10 reflects a solid but not exceptional business with near-term headwinds like earnings decline and high valuation metrics.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral to slightly cautious due to weak technicals and near-term fundamental concerns.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Moderately bullish given JNJ&#x27;s strong moat, resilient industry, and long-term compounding potential.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Consider building a position on dips below key technical support levels or if valuation metrics improve (e.g., PEG ratio under 2.5). Scale in gradually to mitigate near-term risks.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID in its trend cycle because the current price ($228.39) is slightly below the SMA50 (-0.5%) and modestly above the SMA150 (+1.8%), indicating a neutral to mildly bullish phase without strong momentum.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($229.53–$238.71) is anchored by the SMA50 ($229.53) as the lower bound, with floor support at $220.05 providing a safety net against downside risk.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above the recent resistance level of 230.07 on 2026-06-09 with a strong move to 237.71.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level of 230.07 on 2026-06-18, failing to hold the retest.</span></div></div>
-    </article>
-    
-
-    <article class="entry hold">
-      <header class="entry-head">
-        <div class="entry-id">
-          <span class="ticker">UNP</span>
-          <span class="sector">Industrials</span>
-        </div>
-        <span class="tag tag-hold">WAIT FOR PULLBACK</span>
-      </header>
-      <div class="entry-name">Union Pacific Corporation</div>
-      <div class="price-line"><span class="price-now">$258.05</span><span class="price-chg dn">-9.40 (-3.51%) ▼</span></div>
-      <div class="meters">
-        <div class="meter">
-          <div class="meter-label">TECH <span class="meter-num">6/12</span></div>
-          <div class="meter-track"><div class="meter-fill" style="width:50%"></div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label">FUND <span class="meter-num">6.1/10</span></div>
-          <div class="meter-track"><div class="meter-fill alt" style="width:61%"></div></div>
-        </div>
-      </div>
-      <div class="cycle-strip"><span class="cycle-badge cycle-mid">MID</span><span class="buy-range">BUY ZONE&nbsp;&nbsp;$262.71&nbsp;&ndash;&nbsp;$273.22</span><span class="floor-hint">&nbsp;&middot;&nbsp;floor $232.97</span></div>
-      <div class="reasons"><div class="reason"><span class="reason-key">Technical</span><span class="reason-val">The technical score of 6/12 indicates a neutral trend with mixed signals, suggesting neither strong momentum nor significant weakness.</span></div>
-<div class="reason"><span class="reason-key">Fundamental</span><span class="reason-val">The fundamental score of 6.1/10 reflects a solid business with a durable moat and strong cash flow, but concerns about debt, modest growth, and valuation temper its appeal.</span></div>
-<div class="reason"><span class="reason-key">Short term</span><span class="reason-val">Neutral, as the stock lacks clear technical momentum and is slightly overpriced relative to growth.</span></div>
-<div class="reason"><span class="reason-key">Long term</span><span class="reason-val">Positive, given the company&#x27;s durable moat, strong cash flow, and long-term compounding potential despite current concerns.</span></div>
-<div class="reason"><span class="reason-key">Strategy</span><span class="reason-val">Build a position gradually on pullbacks or weakness, focusing on improving technical signals and valuation metrics.</span></div>
-<div class="reason"><span class="reason-key">Cycle</span><span class="reason-val">The stock is classified as MID in its trend cycle because the price is above the SMA150 (+4.9%) but below the SMA50 (-1.8%), indicating a moderate position between support and resistance levels.</span></div>
-<div class="reason"><span class="reason-key">Buy zone</span><span class="reason-val">The buy zone ($262.71–$273.22) is anchored by the SMA50 at the lower bound ($262.71), with floor support at $232.97.</span></div>
-<div class="reason"><span class="reason-key">Breakout</span><span class="reason-val">The stock made a clean breakout above recent resistance at around 269.86 on 2026-04-23 with a strong move and high volume.</span></div>
-<div class="reason"><span class="reason-key">Retest</span><span class="reason-val">After the breakout, the price fell back below the breakout level on 2026-05-20 and did not hold it, indicating a failed retest.</span></div></div>
-    </article>
-    
+    <div class="dispatch-grid">
+<article class="card card--hold" onclick="openPanel('AAPL')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/apple.com" alt="AAPL" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">AA</span><div class="card-id"><span class="card-ticker">AAPL</span><span class="card-name">Apple Inc.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$298.01</span><span class="price-change up">▲ +2.06 (+0.70%)</span></div><canvas id="spark-AAPL" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:67%"></div></div><span class="score-val">8/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:78%"></div></div><span class="score-val">7.8/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Technology</span></div><p class="card-oneliner">Hold or consider taking partial profits if the stock is overextended, as technical strength may face resistanc…</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--go" onclick="openPanel('NVDA')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/nvidia.com" alt="NVDA" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">NV</span><div class="card-id"><span class="card-ticker">NVDA</span><span class="card-name">NVIDIA Corporation</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$210.69</span><span class="price-change up">▲ +6.04 (+2.95%)</span></div><canvas id="spark-NVDA" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:42%"></div></div><span class="score-val">5/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:83%"></div></div><span class="score-val">8.3/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Technology</span></div><p class="card-oneliner">WAIT FOR PULLBACK</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--go" onclick="openPanel('MSFT')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/microsoft.com" alt="MSFT" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">MS</span><div class="card-id"><span class="card-ticker">MSFT</span><span class="card-name">Microsoft Corporation</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$379.40</span><span class="price-change up">▲ +0.49 (+0.13%)</span></div><canvas id="spark-MSFT" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:8%"></div></div><span class="score-val">1/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:86%"></div></div><span class="score-val">8.6/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--none">NONE</span><span class="card-sector">Technology</span></div><p class="card-oneliner">WAIT FOR PULLBACK</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--hold" onclick="openPanel('GOOGL')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/google.com" alt="GOOGL" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">GO</span><div class="card-id"><span class="card-ticker">GOOGL</span><span class="card-name">Alphabet Inc.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$368.03</span><span class="price-change up">▲ +4.24 (+1.17%)</span></div><canvas id="spark-GOOGL" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:50%"></div></div><span class="score-val">6/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:83%"></div></div><span class="score-val">8.3/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Communication Services</span></div><p class="card-oneliner">neutral to slightly cautious, as the technicals do not show strong upside momentum in the near term.</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--hold" onclick="openPanel('TSM')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/tsmc.com" alt="TSM" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">TS</span><div class="card-id"><span class="card-ticker">TSM</span><span class="card-name">Taiwan Semiconductor Manufacturing Company Limited</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$462.12</span><span class="price-change up">▲ +29.97 (+6.94%)</span></div><canvas id="spark-TSM" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:58%"></div></div><span class="score-val">7/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:86%"></div></div><span class="score-val">8.6/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Technology</span></div><p class="card-oneliner">Moderately positive, but not aggressively so; expect some volatility.</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--hold" onclick="openPanel('AMZN')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/amazon.com" alt="AMZN" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">AM</span><div class="card-id"><span class="card-ticker">AMZN</span><span class="card-name">Amazon.com, Inc.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$244.39</span><span class="price-change up">▲ +6.89 (+2.90%)</span></div><canvas id="spark-AMZN" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:42%"></div></div><span class="score-val">5/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:80%"></div></div><span class="score-val">8.0/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Consumer Cyclical</span></div><p class="card-oneliner">Neutral to cautious, as technical weakness may lead to further downside or consolidation.</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--hold" onclick="openPanel('ASML')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/asml.com" alt="ASML" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">AS</span><div class="card-id"><span class="card-ticker">ASML</span><span class="card-name">ASML Holding N.V.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$1,929.68</span><span class="price-change up">▲ +61.85 (+3.31%)</span></div><canvas id="spark-ASML" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:75%"></div></div><span class="score-val">9/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:77%"></div></div><span class="score-val">7.7/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--late">LATE</span><span class="card-sector">Technology</span></div><p class="card-oneliner">Potential for continued upside due to technical strength, but be cautious of overvaluation risks.</p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--hold" onclick="openPanel('META')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/meta.com" alt="META" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">ME</span><div class="card-id"><span class="card-ticker">META</span><span class="card-name">Meta Platforms, Inc.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$577.22</span><span class="price-change up">▲ +9.64 (+1.70%)</span></div><canvas id="spark-META" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:0%"></div></div><span class="score-val">0/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:86%"></div></div><span class="score-val">8.6/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--none">NONE</span><span class="card-sector">Communication Services</span></div><p class="card-oneliner">WAIT FOR PULLBACK</p><span class="card-cta">Read full report &#8594;</span></article>
     </div>
+  </section>
 
-    <footer class="foot">
-      <p class="warn">Generated automatically from market data · Analysis, not financial advice.</p>
-      <p>The Wire · built with the Micha Method &amp; Peter Lynch scoring</p>
-    </footer>
-  </div>
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Diversifier Dispatches</span>
+        <span class="section-rule-count">3 suggestions</span>
+      </div>
+    </div>
+    <div class="suggest-grid">
+<article class="sug-card card--go" onclick="openPanel('JPM')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/jpmorganchase.com" alt="JPM" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">JP</span><div class="card-id"><span class="card-ticker">JPM</span><span class="card-name">JPMorgan Chase &amp; Co.</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$325.22</span><span class="price-change down">▼ -8.24 (-2.47%)</span></div><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:58%"></div></div><span class="score-val">7/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:74%"></div></div><span class="score-val">7.4/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Financial Services</span></div><p class="card-oneliner">WAIT FOR PULLBACK</p></article>
+<article class="sug-card card--go" onclick="openPanel('JNJ')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/jnj.com" alt="JNJ" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">JN</span><div class="card-id"><span class="card-ticker">JNJ</span><span class="card-name">Johnson &amp; Johnson</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$228.39</span><span class="price-change down">▼ -5.81 (-2.48%)</span></div><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:50%"></div></div><span class="score-val">6/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:62%"></div></div><span class="score-val">6.2/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Healthcare</span></div><p class="card-oneliner">WAIT FOR PULLBACK</p></article>
+<article class="sug-card card--hold" onclick="openPanel('HON')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/honeywell.com" alt="HON" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">HO</span><div class="card-id"><span class="card-ticker">HON</span><span class="card-name">Honeywell International Inc.</span></div><span class="action-tag action-tag--hold">WAIT</span></div><div class="card-price"><span class="price-now">$229.01</span><span class="price-change up">▲ +0.40 (+0.17%)</span></div><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:58%"></div></div><span class="score-val">7/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:52%"></div></div><span class="score-val">5.2/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Industrials</span></div><p class="card-oneliner">Hold or consider short-term trading if technical momentum continues, but be cautious due t…</p></article>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-disclaimer">Generated automatically from market data &mdash; analysis only, not financial advice.</span>
+      <span class="footer-sig">The Wire &nbsp;&middot;&nbsp; by Tal Haran</span>
+    </div>
+  </footer>
+
+</div>
+
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<aside class="detail-panel" id="detailPanel" role="dialog" aria-modal="true" aria-label="Stock detail">
+  <button class="panel-close" onclick="closePanel()" aria-label="Close">&times;</button>
+  <div id="panelContent" class="panel-content"></div>
+</aside>
+
+<script>const STOCKS = [{"ticker": "AAPL", "name": "Apple Inc.", "sector": "Technology", "micha_score": 8, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": true, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": true, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "AAPL made a clean breakout above the 300 resistance level on 2026-05-20 with a strong move.", "8": "After the breakout, price fell back below the 300 level on 2026-06-08, failing to hold the retest."}, "peter_score": 7.8, "peter_scores": {"revenue_growth": 7, "eps_growth": 8, "net_income_trend": 8, "balance_sheet": 6, "cash_flow": 9, "moat": 10, "valuation": 5, "management": 9, "industry": 8, "long_term_compounding": 8}, "peter_summary": "Apple Inc. demonstrates strong revenue and earnings growth, supported by a robust moat and exceptional cash flow generation. However, its high P/E and PEG ratios suggest the stock is richly valued, and the elevated debt-to-equity ratio warrants caution. Long-term compounding potential remains attractive due to its industry leadership, loyal customer base, and consistent innovation.", "verdict": {"micha_meaning": "AAPL is technically strong with a score of 8/12, indicating an uptrending stock with solid momentum and volume support.", "peter_meaning": "AAPL is fundamentally strong with a score of 7.8/10, showcasing robust growth, a durable moat, and excellent cash flow, though its valuation is elevated.", "short_term": "Hold or consider taking partial profits if the stock is overextended, as technical strength may face resistance due to high valuation.", "long_term": "Buy and hold, as AAPL's industry leadership, innovation, and compounding potential make it a strong long-term investment.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Build a position gradually on pullbacks to key support levels or when valuation metrics become more attractive, ensuring a lower average cost basis."}, "cycle_stage": "EARLY", "cycle_stage_reasoning": "The stock is classified as EARLY in its trend cycle because it is only +3.2% above its SMA50 and +9.3% above its SMA150, with a golden cross occurring just 22 trading days ago and higher highs & lows confirming upward momentum.", "buy_zone": {"low": 288.63, "high": 300.18, "floor": 246.4}, "buy_zone_narrative": "The buy zone ($288.63–$300.18) is anchored by the SMA50 at the lower bound ($288.63), with floor support sitting at $246.40.", "price_levels": {"price_now": 298.010009765625, "price_change": 2.05999755859375, "price_change_pct": 0.6960626705947437, "price_date": "2026-06-18", "sma50": 288.62981567382815, "sma150": 272.65639455159504, "price_vs_sma50_pct": 3.2499047507957832, "price_vs_sma150_pct": 9.29874219738216, "recent_3m_low": 246.40298461914062, "recent_3m_high": 315.20001220703125, "prior_3m_low": 246.2425079345703, "week_52_low": 199.50851440429688, "golden_cross_days_ago": 22}, "sparkline": [199.50851440429688, 246.2425079345703, 272.65639455159504, 288.62981567382815, 246.40298461914062, 298.010009765625], "domain": "apple.com"}, {"ticker": "NVDA", "name": "NVIDIA Corporation", "sector": "Technology", "micha_score": 5, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": true, "7_breakout_quality": false, "8_retest_quality": false}, "micha_reasons": {"7": "No clean breakout above a recent resistance/consolidation occurred in the last 40 trading days.", "8": "There was no breakout to retest in the last 40 trading days."}, "peter_score": 8.3, "peter_scores": {"revenue_growth": 9, "eps_growth": 10, "net_income_trend": 10, "balance_sheet": 4, "cash_flow": 8, "moat": 9, "valuation": 7, "management": 8, "industry": 9, "long_term_compounding": 9}, "peter_summary": "NVIDIA exhibits exceptional revenue and earnings growth, driven by its dominant position in AI and semiconductors, but its high debt-to-equity ratio raises balance sheet concerns. The company's strong moat, industry tailwinds, and reasonable valuation (PEG of 0.65) suggest long-term compounding potential. Management's execution and cash flow generation further support its status as a high-quality growth stock, albeit with some financial leverage risk.", "verdict": {"micha_meaning": "The technical score of 5/12 indicates moderate trend strength but suggests potential weakness or consolidation in the near term.", "peter_meaning": "The fundamental score of 8.3/10 reflects NVIDIA's strong growth, industry leadership, and solid moat, although balance sheet leverage is a concern.", "short_term": "WAIT FOR PULLBACK", "long_term": "BUY NOW for long-term growth potential, given NVIDIA's strong fundamentals and industry tailwinds.", "action": "ACCUMULATE", "accumulation_strategy": "Scale into the position on pullbacks or weakness, focusing on dollar-cost averaging to mitigate short-term volatility while capitalizing on long-term growth."}, "cycle_stage": "EARLY", "cycle_stage_reasoning": "The stock is classified as EARLY because its price is only +0.8% above the SMA50 ($209.12) and +10.0% above the SMA150 ($191.53), indicating recent momentum but still early in the trend cycle.", "buy_zone": {"low": 209.12, "high": 217.49, "floor": 164.98}, "buy_zone_narrative": "The buy zone ($209.12–$217.49) is anchored by the SMA50 ($209.12) at the lower bound, with floor support at $164.98.", "price_levels": {"price_now": 210.69000244140625, "price_change": 6.040008544921875, "price_change_pct": 2.9513846689763534, "price_date": "2026-06-18", "sma50": 209.12096466064452, "sma150": 191.53199442545574, "price_vs_sma50_pct": 0.7503015220439145, "price_vs_sma150_pct": 10.002510584938754, "recent_3m_low": 164.97772216796875, "recent_3m_high": 235.465576171875, "prior_3m_low": 170.73175048828125, "week_52_low": 143.65866088867188, "golden_cross_days_ago": 36}, "sparkline": [143.65866088867188, 170.73175048828125, 191.53199442545574, 209.12096466064452, 164.97772216796875, 210.69000244140625], "domain": "nvidia.com"}, {"ticker": "MSFT", "name": "Microsoft Corporation", "sector": "Technology", "micha_score": 1, "micha_criteria": {"1_price_above_sma150": false, "2_sma150_slope_positive": false, "3_price_above_sma50": false, "4_sma50_above_sma150": false, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": false, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "MSFT made a clean breakout above recent resistance at $430 on 2026-05-29 with a strong move.", "8": "After the breakout, price fell back through the breakout level without holding it."}, "peter_score": 8.6, "peter_scores": {"revenue_growth": 8, "eps_growth": 9, "net_income_trend": 9, "balance_sheet": 8, "cash_flow": 8, "moat": 10, "valuation": 7, "management": 9, "industry": 9, "long_term_compounding": 9}, "peter_summary": "Microsoft exhibits strong fundamentals with robust revenue and earnings growth, a solid balance sheet, and exceptional competitive moat in the thriving software infrastructure industry. While the valuation is slightly elevated (PEG ~1.17), its high ROE, consistent cash flow, and management quality justify a long-term compounding outlook. This remains a blue-chip compounder in technology.", "verdict": {"micha_meaning": "The technical score of 1/12 indicates MSFT is currently weak/below trend, showing poor trend strength, lack of breakouts, and weak relative strength.", "peter_meaning": "The fundamental score of 8.6/10 reflects MSFT's strong business quality, growth, valuation, and moat, making it a high-quality blue-chip compounder.", "short_term": "WAIT FOR PULLBACK", "long_term": "BUY NOW for long-term compounding given strong fundamentals, but expect short-term volatility due to weak technicals.", "action": "ACCUMULATE", "accumulation_strategy": "Build a position gradually by buying on pullbacks or weakness to average into the stock, leveraging its strong fundamentals while mitigating short-term technical risks."}, "cycle_stage": "NONE", "cycle_stage_reasoning": "", "buy_zone": null, "buy_zone_narrative": "", "price_levels": {"price_now": 379.3999938964844, "price_change": 0.489990234375, "price_change_pct": 0.12931572923366996, "price_date": "2026-06-18", "sma50": 412.44043395996096, "sma150": 429.17419576009115, "price_vs_sma50_pct": -8.010960454639637, "price_vs_sma150_pct": -11.59766881497941, "recent_3m_low": 355.9989318847656, "recent_3m_high": 460.5199890136719, "prior_3m_low": 383.6390686035156, "week_52_low": 355.9989318847656, "golden_cross_days_ago": null}, "sparkline": [355.9989318847656, 383.6390686035156, 429.17419576009115, 412.44043395996096, 355.9989318847656, 379.3999938964844], "domain": "microsoft.com"}, {"ticker": "GOOGL", "name": "Alphabet Inc.", "sector": "Communication Services", "micha_score": 6, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "The stock made a clean breakout above recent resistance with a strong move on 2026-04-30, closing at 384.57 after opening at 373.85.", "8": "After the breakout, the price did not pull back to the breakout level and hold it; instead, it continued to fluctuate without a clear retest."}, "peter_score": 8.3, "peter_scores": {"revenue_growth": 7, "eps_growth": 9, "net_income_trend": 8, "balance_sheet": 8, "cash_flow": 8, "moat": 10, "valuation": 6, "management": 9, "industry": 9, "long_term_compounding": 9}, "peter_summary": "Alphabet Inc. demonstrates strong fundamentals with robust revenue and earnings growth, a solid balance sheet, and exceptional competitive moat. While valuation metrics like P/E and PEG suggest the stock is fairly priced, its industry leadership, management quality, and long-term compounding potential make it a compelling long-term investment.", "verdict": {"micha_meaning": "The technical score of 6/12 indicates a neutral to slightly weak trend strength, lacking strong momentum or clear breakout signals.", "peter_meaning": "The fundamental score of 8.3/10 reflects Alphabet Inc.'s strong business quality, growth potential, and competitive moat, making it a high-quality long-term investment.", "short_term": "neutral to slightly cautious, as the technicals do not show strong upside momentum in the near term.", "long_term": "bullish, given the company's exceptional fundamentals and compounding potential.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Consider building a position incrementally on pullbacks or technical weakness, focusing on key support levels to maximize entry quality."}, "cycle_stage": "MID", "cycle_stage_reasoning": "The stock is classified as MID in its trend cycle because the current price ($368.03) is only +0.2% above the SMA50 ($367.19) and +11.6% above the SMA150 ($329.69), indicating moderate momentum.", "buy_zone": {"low": 367.19, "high": 381.88, "floor": 273.34}, "buy_zone_narrative": "The buy zone ($367.19–$381.88) is anchored by the SMA50 ($367.19) as the lower bound, with floor support at $273.34.", "price_levels": {"price_now": 368.0299987792969, "price_change": 4.239990234375, "price_change_pct": 1.1655048612615904, "price_date": "2026-06-18", "sma50": 367.19340881347654, "sma150": 329.6893339029948, "price_vs_sma50_pct": 0.22783360096893807, "price_vs_sma150_pct": 11.629331292708162, "recent_3m_low": 273.33673095703125, "recent_3m_high": 402.3796691894531, "prior_3m_low": 296.3342590332031, "week_52_low": 164.72007751464844, "golden_cross_days_ago": null}, "sparkline": [164.72007751464844, 296.3342590332031, 329.6893339029948, 367.19340881347654, 273.33673095703125, 368.0299987792969], "domain": "google.com"}, {"ticker": "TSM", "name": "Taiwan Semiconductor Manufacturing Company Limited", "sector": "Technology", "micha_score": 7, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": true, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "TSM made a clean breakout above the 429.54 resistance level on 2026-05-27 with a strong move.", "8": "After the breakout, price fell back through the breakout level on 2026-06-05 without holding it."}, "peter_score": 8.6, "peter_scores": {"revenue_growth": 8, "eps_growth": 9, "net_income_trend": 9, "balance_sheet": 8, "cash_flow": 9, "moat": 10, "valuation": 6, "management": 9, "industry": 9, "long_term_compounding": 9}, "peter_summary": "TSM is a high-quality compounder with strong revenue growth (35.1%), exceptional earnings growth (58.4%), and a dominant moat in semiconductor manufacturing. The balance sheet is solid (low debt-to-equity of 18.4%), and free cash flow generation is robust. Valuation is slightly elevated (PEG 1.44), but justified by its industry leadership and long-term growth potential in AI, IoT, and advanced chips.", "verdict": {"micha_meaning": "The technical score of 7/12 indicates moderate strength with some uptrend momentum but not overwhelmingly bullish.", "peter_meaning": "The fundamental score of 8.6/10 reflects a high-quality, growth-oriented business with a strong moat and solid financials, albeit slightly expensive valuation.", "short_term": "Moderately positive, but not aggressively so; expect some volatility.", "long_term": "Highly attractive due to strong fundamentals and industry leadership.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Consider building a position gradually on dips, especially if technical health improves or valuation becomes more attractive (e.g., PEG below 1.3)."}, "cycle_stage": "MID", "cycle_stage_reasoning": "The stock is classified as MID in its trend cycle because the current price ($462.12) is +14.2% above the SMA50 ($404.79) and +31.5% above the SMA150 ($351.31), indicating moderate upward momentum.", "buy_zone": {"low": 404.79, "high": 420.98, "floor": 315.76}, "buy_zone_narrative": "The buy zone ($404.79–$420.98) is anchored by the SMA50 ($404.79) as the lower bound, with the floor support sitting at $315.76.", "price_levels": {"price_now": 462.1199951171875, "price_change": 29.970001220703125, "price_change_pct": 6.935092362371309, "price_date": "2026-06-18", "sma50": 404.78573120117187, "sma150": 351.3095469156901, "price_vs_sma50_pct": 14.164102016610226, "price_vs_sma150_pct": 31.542111273193086, "recent_3m_low": 315.7605285644531, "recent_3m_high": 462.1199951171875, "prior_3m_low": 275.5364990234375, "week_52_low": 207.21827697753906, "golden_cross_days_ago": null}, "sparkline": [207.21827697753906, 275.5364990234375, 351.3095469156901, 404.78573120117187, 315.7605285644531, 462.1199951171875], "domain": "tsmc.com"}, {"ticker": "AMZN", "name": "Amazon.com, Inc.", "sector": "Consumer Cyclical", "micha_score": 5, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": false, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": true, "12_rs_vs_sp500": true, "7_breakout_quality": false, "8_retest_quality": false}, "micha_reasons": {"7": "No clean breakout above recent resistance observed in the last 40 trading days.", "8": "No breakout occurred, hence no retest to evaluate."}, "peter_score": 8.0, "peter_scores": {"revenue_growth": 8, "eps_growth": 9, "net_income_trend": 8, "balance_sheet": 6, "cash_flow": 7, "moat": 10, "valuation": 6, "management": 9, "industry": 8, "long_term_compounding": 9}, "peter_summary": "Amazon demonstrates strong revenue and earnings growth, supported by its dominant moat and exceptional management. While its valuation is slightly elevated and its balance sheet carries moderate debt, its industry leadership and long-term compounding potential make it a compelling long-term investment.", "verdict": {"micha_meaning": "The technical score of 5/12 indicates AMZN is currently weak and below its trend, lacking strong momentum or breakout potential.", "peter_meaning": "The fundamental score of 8/10 highlights Amazon's strong business quality, growth, and moat, making it a compelling long-term investment despite slightly elevated valuation and moderate debt.", "short_term": "Neutral to cautious, as technical weakness may lead to further downside or consolidation.", "long_term": "Bullish, given Amazon's strong fundamentals and long-term compounding potential.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Consider building a position gradually on pullbacks or technical support levels, focusing on long-term fundamentals."}, "cycle_stage": "EARLY", "cycle_stage_reasoning": "The stock is classified as EARLY in its trend cycle because it recently had a golden cross (30 trading days ago), is trading above its SMA150 (+4.3%), and shows higher highs & higher lows.", "buy_zone": {"low": 257.1, "high": 267.38, "floor": 199.34}, "buy_zone_narrative": "The buy zone ($257.10–$267.38) is anchored by the SMA50 ($257.10) as its lower bound, with floor support at $199.34.", "price_levels": {"price_now": 244.38999938964844, "price_change": 6.8899993896484375, "price_change_pct": 2.9010523745888195, "price_date": "2026-06-18", "sma50": 257.10020050048826, "sma150": 234.32173350016276, "price_vs_sma50_pct": -4.943676078858476, "price_vs_sma150_pct": 4.296769974808452, "recent_3m_low": 199.33999633789062, "recent_3m_high": 274.989990234375, "prior_3m_low": 198.7899932861328, "week_52_low": 198.7899932861328, "golden_cross_days_ago": 30}, "sparkline": [198.7899932861328, 198.7899932861328, 234.32173350016276, 257.10020050048826, 199.33999633789062, 244.38999938964844], "domain": "amazon.com"}, {"ticker": "ASML", "name": "ASML Holding N.V.", "sector": "Technology", "micha_score": 9, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": true, "9_volume_expansion": true, "10_volume_dryup_before": false, "11_higher_highs_lows": true, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "The stock made a clean breakout above recent resistance at around 1700 on 2026-06-02 with a strong move.", "8": "After the breakout, the price did not pull back to the breakout level to hold it, instead continuing higher without a retest."}, "peter_score": 7.7, "peter_scores": {"revenue_growth": 7, "eps_growth": 8, "net_income_trend": 8, "balance_sheet": 5, "cash_flow": 9, "moat": 10, "valuation": 4, "management": 8, "industry": 9, "long_term_compounding": 9}, "peter_summary": "ASML is a dominant player in semiconductor lithography with a strong moat and robust cash flow, but its high valuation (P/E and PEG) and leveraged balance sheet temper enthusiasm. The industry tailwinds and technological leadership make it a compelling long-term compounder, though investors should be cautious about entry points given current multiples.", "verdict": {"micha_meaning": "ASML is technically strong, indicating an uptrend with robust momentum and volume support.", "peter_meaning": "ASML is fundamentally high-quality with a strong moat and growth potential, but its valuation is stretched and balance sheet is leveraged.", "short_term": "Potential for continued upside due to technical strength, but be cautious of overvaluation risks.", "long_term": "Compelling long-term investment given its industry leadership and growth tailwinds, assuming valuation normalizes.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Build a position gradually on dips or during market corrections to mitigate valuation risk, focusing on strong support levels identified technically."}, "cycle_stage": "LATE", "cycle_stage_reasoning": "The stock is classified as LATE in its trend cycle because the current price ($1929.68) is significantly above both the SMA50 (+22.2%) and SMA150 (+41.3%), indicating extended upward momentum.", "buy_zone": {"low": 1579.23, "high": 1642.4, "floor": 1251.23}, "buy_zone_narrative": "The buy zone ($1579.23–$1642.40) is anchored by the SMA50 ($1579.23) as the lower bound, with the floor support sitting at $1251.23.", "price_levels": {"price_now": 1929.6800537109375, "price_change": 61.85009765625, "price_change_pct": 3.31133449572103, "price_date": "2026-06-18", "sma50": 1579.2263110351562, "sma150": 1365.9899739583334, "price_vs_sma50_pct": 22.191483274241094, "price_vs_sma150_pct": 41.26604810422996, "recent_3m_low": 1251.22705078125, "recent_3m_high": 1929.6800537109375, "prior_3m_low": 1011.8822631835938, "week_52_low": 686.0034790039062, "golden_cross_days_ago": null}, "sparkline": [686.0034790039062, 1011.8822631835938, 1365.9899739583334, 1579.2263110351562, 1251.22705078125, 1929.6800537109375], "domain": "asml.com"}, {"ticker": "META", "name": "Meta Platforms, Inc.", "sector": "Communication Services", "micha_score": 0, "micha_criteria": {"1_price_above_sma150": false, "2_sma150_slope_positive": false, "3_price_above_sma50": false, "4_sma50_above_sma150": false, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": false, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": false, "7_breakout_quality": false, "8_retest_quality": false}, "micha_reasons": {"7": "No clean breakout above recent resistance observed in the last 40 trading days.", "8": "No breakout occurred, hence no retest to evaluate."}, "peter_score": 8.6, "peter_scores": {"revenue_growth": 8, "eps_growth": 9, "net_income_trend": 9, "balance_sheet": 7, "cash_flow": 8, "moat": 10, "valuation": 8, "management": 9, "industry": 9, "long_term_compounding": 9}, "peter_summary": "Meta Platforms, Inc. demonstrates strong fundamentals with robust revenue and earnings growth, a solid balance sheet, and exceptional free cash flow. Its dominant moat in social media and advertising, combined with reasonable valuation metrics and strong industry tailwinds, positions it well for long-term compounding. Management's execution and strategic focus further enhance its appeal as a long-term investment.", "verdict": {"micha_meaning": "A score of 0/12 indicates META is technically weak, with poor trend strength, no breakouts, low volume, and weak relative strength.", "peter_meaning": "A score of 8.6/10 reflects META's strong fundamentals, including robust growth, a solid moat, and attractive valuation metrics.", "short_term": "WAIT FOR PULLBACK", "long_term": "BUY NOW", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Consider building a position gradually on pullbacks to key support levels or improving technical signals, leveraging dollar-cost averaging to mitigate short-term weakness."}, "cycle_stage": "NONE", "cycle_stage_reasoning": "", "buy_zone": null, "buy_zone_narrative": "", "price_levels": {"price_now": 577.219970703125, "price_change": 9.63995361328125, "price_change_pct": 1.6984307627157635, "price_date": "2026-06-18", "sma50": 621.3660534667969, "sma150": 631.6282063802083, "price_vs_sma50_pct": -7.104682097994728, "price_vs_sma150_pct": -8.613965482778378, "recent_3m_low": 525.233154296875, "recent_3m_high": 687.9124145507812, "prior_3m_low": 603.0443115234375, "week_52_low": 525.233154296875, "golden_cross_days_ago": null}, "sparkline": [525.233154296875, 603.0443115234375, 631.6282063802083, 621.3660534667969, 525.233154296875, 577.219970703125], "domain": "meta.com"}, {"ticker": "JPM", "name": "JPMorgan Chase & Co.", "sector": "Financial Services", "micha_score": 7, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": true, "6_atr_shock_recent": false, "9_volume_expansion": true, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": false, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "The stock made a clean breakout above the recent resistance level of around 316.30 on 2026-06-16 with a strong move to 331.75.", "8": "After the breakout, the price did not pull back to the breakout level to hold it, instead falling back below the breakout level on 2026-06-18."}, "peter_score": 7.4, "peter_scores": {"revenue_growth": 7, "eps_growth": 8, "net_income_trend": 8, "balance_sheet": 5, "cash_flow": 5, "moat": 9, "valuation": 7, "management": 9, "industry": 8, "long_term_compounding": 8}, "peter_summary": "JPMorgan Chase & Co. demonstrates strong fundamentals with solid revenue and earnings growth, a robust competitive moat, and excellent management. However, the lack of data on debt-to-equity and free cash flow introduces some uncertainty regarding balance sheet strength and cash flow quality. Overall, it remains a compelling long-term investment in the resilient banking sector.", "verdict": {"micha_meaning": "JPMorgan Chase & Co. has a moderate technical health score of 7/12, indicating it is trending but not at peak strength.", "peter_meaning": "JPMorgan Chase & Co. scores a solid 7.4/10 on fundamental quality, reflecting strong business fundamentals, growth, and a competitive moat.", "short_term": "WAIT FOR PULLBACK", "long_term": "BUY NOW", "action": "ACCUMULATE", "accumulation_strategy": "Consider building a position gradually during market pullbacks or weakness, ensuring cost averaging while capitalizing on long-term strength."}, "cycle_stage": "EARLY", "cycle_stage_reasoning": "The stock is classified as EARLY in its trend cycle because the current price ($325.22) is only +5.3% above the SMA50 ($308.86) and +6.3% above the SMA150 ($305.85), indicating it has recently begun trending upward.", "buy_zone": {"low": 308.86, "high": 321.22, "floor": 281.4}, "buy_zone_narrative": "The buy zone ($308.86–$321.22) is anchored by the SMA50 ($308.86) as the lower bound, with the floor support sitting at $281.40.", "price_levels": {"price_now": 325.2200012207031, "price_change": -8.239990234375, "price_change_pct": -2.471058131567505, "price_date": "2026-06-18", "sma50": 308.8646002197266, "sma150": 305.8495251464844, "price_vs_sma50_pct": 5.29533037756392, "price_vs_sma150_pct": 6.333335343561967, "recent_3m_low": 281.3998718261719, "recent_3m_high": 333.4599914550781, "prior_3m_low": 281.44964599609375, "week_52_low": 269.7538146972656, "golden_cross_days_ago": 6}, "sparkline": [269.7538146972656, 281.44964599609375, 305.8495251464844, 308.8646002197266, 281.3998718261719, 325.2200012207031], "domain": "jpmorganchase.com"}, {"ticker": "JNJ", "name": "Johnson & Johnson", "sector": "Healthcare", "micha_score": 6, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": false, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": true, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "The stock made a clean breakout above the recent resistance level of ~230.00 on 2026-06-05 with a strong move to 235.22.", "8": "After the breakout, the price fell back below the breakout level (~230.00) on 2026-06-18, failing to hold the retest."}, "peter_score": 6.2, "peter_scores": {"revenue_growth": 6, "eps_growth": 3, "net_income_trend": 4, "balance_sheet": 5, "cash_flow": 7, "moat": 9, "valuation": 5, "management": 8, "industry": 8, "long_term_compounding": 7}, "peter_summary": "Johnson & Johnson demonstrates a strong moat and operates in a resilient industry, but recent earnings growth and net income trends are concerning. The balance sheet is moderately leveraged, and valuation metrics are mixed, though cash flow remains robust. Long-term compounding potential is solid given its competitive position and industry strength, but near-term earnings recovery is critical.", "verdict": {"micha_meaning": "The technical score of 6/12 indicates moderate trend strength with some positive signals but lacking strong momentum or breakouts.", "peter_meaning": "The fundamental score of 6.2/10 reflects a strong competitive position and resilience, but concerns about earnings growth and valuation temper optimism.", "short_term": "WAIT FOR PULLBACK", "long_term": "BUY NOW", "action": "ACCUMULATE", "accumulation_strategy": "Dollar-cost average on pullbacks to technical support levels, focusing on periods where the technical score improves to confirm trend strength."}, "cycle_stage": "MID", "cycle_stage_reasoning": "The stock is classified as MID in its trend cycle because the current price (-0.5% vs SMA50, +1.8% vs SMA150) shows moderate momentum between short and medium-term averages without clear higher highs or lows.", "buy_zone": {"low": 229.53, "high": 238.71, "floor": 220.05}, "buy_zone_narrative": "The buy zone's lower bound is anchored at the SMA50 ($229.53), with floor support at $220.05.", "price_levels": {"price_now": 228.38999938964844, "price_change": -5.80999755859375, "price_change_pct": -2.4807846431687874, "price_date": "2026-06-18", "sma50": 229.52803131103516, "sma150": 224.3036624145508, "price_vs_sma50_pct": -0.49581391644690714, "price_vs_sma150_pct": 1.8217878973128026, "recent_3m_low": 220.05445861816406, "recent_3m_high": 243.04225158691406, "prior_3m_low": 202.0675048828125, "week_52_low": 146.13856506347656, "golden_cross_days_ago": null}, "sparkline": [146.13856506347656, 202.0675048828125, 224.3036624145508, 229.52803131103516, 220.05445861816406, 228.38999938964844], "domain": "jnj.com"}, {"ticker": "HON", "name": "Honeywell International Inc.", "sector": "Industrials", "micha_score": 7, "micha_criteria": {"1_price_above_sma150": true, "2_sma150_slope_positive": true, "3_price_above_sma50": true, "4_sma50_above_sma150": true, "5_golden_cross_recent": false, "6_atr_shock_recent": false, "9_volume_expansion": true, "10_volume_dryup_before": false, "11_higher_highs_lows": false, "12_rs_vs_sp500": true, "7_breakout_quality": true, "8_retest_quality": false}, "micha_reasons": {"7": "The stock made a clean breakout above the 216.89 resistance level on 2026-05-21 with a strong move to 223.80.", "8": "After the breakout, the price fell back below the breakout level on 2026-06-03, failing to hold the retest."}, "peter_score": 5.2, "peter_scores": {"revenue_growth": 3, "eps_growth": 2, "net_income_trend": 4, "balance_sheet": 5, "cash_flow": 7, "moat": 8, "valuation": 4, "management": 7, "industry": 6, "long_term_compounding": 6}, "peter_summary": "Honeywell International Inc. shows mixed fundamentals for long-term investment. While it has a strong moat and decent cash flow, its high debt-to-equity ratio (257.387), negative earnings growth (-41.9%), and modest revenue growth (2.4%) are concerning. The valuation (P/E of 36.64, PEG of 2.097) appears stretched, but its industry position and management quality offer some stability for long-term compounding.", "verdict": {"micha_meaning": "The technical score of 7/12 indicates moderate strength, suggesting the stock is in an uptrend but not exceptionally strong.", "peter_meaning": "The fundamental score of 5.2/10 reflects mixed quality, with strong moat and cash flow but concerning high debt, negative earnings growth, and stretched valuation.", "short_term": "Hold or consider short-term trading if technical momentum continues, but be cautious due to fundamental weaknesses.", "long_term": "Exercise caution; the stock may not be ideal for long-term compounding unless fundamentals improve significantly.", "action": "WAIT FOR PULLBACK", "accumulation_strategy": "Consider accumulating on significant pullbacks or if fundamental metrics like earnings growth and debt improve, using dollar-cost averaging to mitigate risk."}, "cycle_stage": "MID", "cycle_stage_reasoning": "The stock is classified as MID in its trend cycle because the current price ($229.01) is moderately above both the SMA50 (+3.5%) and SMA150 (+5.5%), but without forming higher highs and higher lows.", "buy_zone": {"low": 221.32, "high": 230.18, "floor": 205.88}, "buy_zone_narrative": "The buy zone ($221.32–$230.18) is anchored by the SMA50 ($221.32) at the lower bound, with floor support at $205.88.", "price_levels": {"price_now": 229.00999450683594, "price_change": 0.399993896484375, "price_change_pct": 0.17496780342787233, "price_date": "2026-06-18", "sma50": 221.32353240966796, "sma150": 217.0623198445638, "price_vs_sma50_pct": 3.4729529270933557, "price_vs_sma150_pct": 5.504260099508633, "recent_3m_low": 205.8800048828125, "recent_3m_high": 237.86000061035156, "prior_3m_low": 193.06517028808594, "week_52_low": 186.1873016357422, "golden_cross_days_ago": null}, "sparkline": [186.1873016357422, 193.06517028808594, 217.0623198445638, 221.32353240966796, 205.8800048828125, 229.00999450683594], "domain": "honeywell.com"}];
+const PORTFOLIO_COUNT = 8;
+
+const STOCK_MAP = {};
+STOCKS.forEach(function(s) { STOCK_MAP[s.ticker] = s; });
+
+function handleLogoError(img) {
+  img.style.display = 'none';
+  if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  var html = document.documentElement;
+  var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  try { localStorage.setItem('wire-theme', next); } catch(e) {}
+  setTimeout(function() { renderRadarChart(); renderDistChart(); }, 30);
+}
+
+(function() {
+  try {
+    var saved = localStorage.getItem('wire-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  } catch(e) {}
+})();
+
+// ── Panel ─────────────────────────────────────────────────────────────────────
+function openPanel(ticker) {
+  var s = STOCK_MAP[ticker];
+  if (!s) return;
+  document.getElementById('panelContent').innerHTML = buildPanelHTML(s);
+  document.getElementById('detailPanel').classList.add('detail-panel--open');
+  document.getElementById('overlay').classList.add('panel-overlay--visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  document.getElementById('detailPanel').classList.remove('detail-panel--open');
+  document.getElementById('overlay').classList.remove('panel-overlay--visible');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closePanel();
+});
+
+// ── Panel HTML builder ────────────────────────────────────────────────────────
+function jEsc(t) {
+  if (t == null) return '';
+  return String(t)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmtDollar(n) {
+  if (n == null) return '—';
+  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+var CRITERIA_LABELS = {
+  '1_price_above_sma150':   'Price above SMA 150',
+  '2_sma150_slope_positive':'SMA 150 slope positive',
+  '3_price_above_sma50':    'Price above SMA 50',
+  '4_sma50_above_sma150':   'SMA 50 above SMA 150',
+  '5_golden_cross_recent':  'Golden cross',
+  '6_atr_shock_recent':     'ATR volatility shock',
+  '7_breakout_quality':     'Breakout quality (AI)',
+  '8_retest_quality':       'Retest quality (AI)',
+  '9_volume_expansion':     'Volume expansion',
+  '10_volume_dryup_before': 'Volume dry-up prior',
+  '11_higher_highs_lows':   'Higher highs & higher lows',
+  '12_rs_vs_sp500':         'Relative strength vs S&P 500'
+};
+
+var CRITERIA_ORDER = [
+  '1_price_above_sma150','2_sma150_slope_positive','3_price_above_sma50',
+  '4_sma50_above_sma150','5_golden_cross_recent','6_atr_shock_recent',
+  '7_breakout_quality','8_retest_quality','9_volume_expansion',
+  '10_volume_dryup_before','11_higher_highs_lows','12_rs_vs_sp500'
+];
+
+var PETER_LABELS = {
+  'revenue_growth':        'Revenue Growth',
+  'eps_growth':            'EPS Growth',
+  'net_income_trend':      'Net Income Trend',
+  'balance_sheet':         'Balance Sheet',
+  'cash_flow':             'Cash Flow Quality',
+  'moat':                  'Moat & Competitive Edge',
+  'valuation':             'Valuation',
+  'management':            'Management Quality',
+  'industry':              'Industry Strength',
+  'long_term_compounding': 'Long-Term Compounding'
+};
+
+var PETER_ORDER = [
+  'revenue_growth','eps_growth','net_income_trend','balance_sheet',
+  'cash_flow','moat','valuation','management','industry','long_term_compounding'
+];
+
+function actionClass(action) {
+  if (!action) return 'neutral';
+  var a = action.toUpperCase();
+  if (a.indexOf('BUY') >= 0 || a.indexOf('ACCUMULATE') >= 0) return 'go';
+  if (a.indexOf('WAIT') >= 0) return 'hold';
+  if (a.indexOf('AVOID') >= 0) return 'stop';
+  return 'neutral';
+}
+
+function cycleClass(stage) {
+  var m = {EARLY:'early', MID:'mid', LATE:'late'};
+  return m[(stage||'').toUpperCase()] || 'none';
+}
+
+function buildPanelHTML(s) {
+  var v   = s.verdict || {};
+  var pl  = s.price_levels || {};
+  var bz  = s.buy_zone;
+  var cls = actionClass(v.action || '');
+  var initials = (s.ticker||'').slice(0,2).toUpperCase();
+
+  // Price change line
+  var priceHtml = '<span class="price-now">' + jEsc(fmtDollar(pl.price_now)) + '</span>';
+  if (pl.price_change != null && pl.price_change_pct != null) {
+    var chg  = pl.price_change;
+    var pct  = pl.price_change_pct;
+    var arr  = chg >= 0 ? '▲' : '▼';
+    var dir  = chg >= 0 ? 'up' : 'down';
+    var sign = chg >= 0 ? '+' : '';
+    priceHtml += ' <span class="price-change ' + dir + '">' + arr + ' ' +
+      sign + Number(chg).toFixed(2) + ' (' + sign + Number(pct).toFixed(2) + '%)</span>';
+  }
+
+  // Logo
+  var logoHtml;
+  if (s.domain) {
+    logoHtml = '<img class="panel-logo" width="40" height="40" src="https://logo.clearbit.com/' +
+      jEsc(s.domain) + '" alt="' + jEsc(s.ticker) + '" loading="lazy" ' +
+      'onerror="handleLogoError(this)">' +
+      '<span class="panel-logo-fallback" style="display:none">' + initials + '</span>';
+  } else {
+    logoHtml = '<span class="panel-logo-fallback">' + initials + '</span>';
+  }
+
+  // Section 1: The Story
+  var storyParts = [];
+  if (s.cycle_stage_reasoning) storyParts.push({t: s.cycle_stage_reasoning, dc: true});
+  if (v.micha_meaning)         storyParts.push({t: v.micha_meaning});
+  if (s.micha_reasons && s.micha_reasons['7']) storyParts.push({t: s.micha_reasons['7']});
+  if (s.micha_reasons && s.micha_reasons['8']) storyParts.push({t: s.micha_reasons['8']});
+  if (v.peter_meaning)         storyParts.push({t: v.peter_meaning});
+  if (s.peter_summary)         storyParts.push({t: s.peter_summary});
+  if (s.buy_zone_narrative)    storyParts.push({t: s.buy_zone_narrative});
+
+  var pullQuote   = v.short_term || '';
+  var pullMidIdx  = Math.max(0, Math.floor(storyParts.length / 2) - 1);
+  var pullInserted = false;
+  var storyHtml   = '';
+
+  for (var i = 0; i < storyParts.length; i++) {
+    var p   = storyParts[i];
+    var dcCls = p.dc ? ' class="panel-drop-cap"' : '';
+    storyHtml += '<p' + dcCls + '>' + jEsc(p.t) + '</p>';
+    if (!pullInserted && pullQuote && i >= pullMidIdx) {
+      storyHtml += '<blockquote class="panel-pull">' + jEsc(pullQuote) + '</blockquote>';
+      pullInserted = true;
+    }
+  }
+
+  // Section 2: Micha Method
+  var crit    = s.micha_criteria || {};
+  var reasons = s.micha_reasons  || {};
+  var passCount = 0;
+  CRITERIA_ORDER.forEach(function(k) { if (crit[k]) passCount++; });
+
+  var michaHtml = '';
+  CRITERIA_ORDER.forEach(function(key) {
+    var val   = crit[key];
+    var label = CRITERIA_LABELS[key] || key;
+    var bCls  = val ? 'crit-pass' : 'crit-fail';
+    var bTxt  = val ? 'PASS' : 'FAIL';
+    michaHtml += '<div class="crit-row"><span class="crit-name">' + jEsc(label) +
+      '</span><span class="crit-badge ' + bCls + '">' + bTxt + '</span></div>';
+    if (key === '7_breakout_quality' && reasons['7']) {
+      michaHtml += '<p class="crit-reason">' + jEsc(reasons['7']) + '</p>';
+    }
+    if (key === '8_retest_quality' && reasons['8']) {
+      michaHtml += '<p class="crit-reason">' + jEsc(reasons['8']) + '</p>';
+    }
+  });
+
+  // Section 3: Peter Lynch
+  var ps = s.peter_scores || {};
+  var peterBarsHtml = '';
+  PETER_ORDER.forEach(function(key) {
+    var score = ps[key];
+    if (score == null) return;
+    var label = PETER_LABELS[key] || key;
+    var pct2  = Math.round((score / 10) * 100);
+    peterBarsHtml += '<div class="peter-bar-row">' +
+      '<span class="peter-bar-label">' + jEsc(label) + '</span>' +
+      '<div class="peter-bar-track"><div class="peter-bar-fill" style="width:' + pct2 + '%"></div></div>' +
+      '<span class="peter-bar-val">' + Number(score).toFixed(1) + '</span>' +
+      '</div>';
+  });
+
+  var keyMetrics = [
+    {label:'Valuation',   key:'valuation'},
+    {label:'EPS Growth',  key:'eps_growth'},
+    {label:'Net Income',  key:'net_income_trend'},
+    {label:'Management',  key:'management'}
+  ];
+  var kmHtml = '<div class="key-metrics-grid">';
+  keyMetrics.forEach(function(m) {
+    var val = ps[m.key] != null ? Number(ps[m.key]).toFixed(1) + '/10' : '—';
+    kmHtml += '<div class="key-metric">' +
+      '<span class="key-metric-label">' + jEsc(m.label) + '</span>' +
+      '<span class="key-metric-val">' + jEsc(val) + '</span>' +
+      '</div>';
+  });
+  kmHtml += '</div>';
+
+  // Section 4: The Verdict
+  var actionText = v.action || '—';
+  var buyZoneHtml;
+  if (bz && bz.low != null && bz.high != null) {
+    buyZoneHtml = '<div class="buy-zone-box">' +
+      '<p class="bz-range">' + jEsc(fmtDollar(bz.low)) + ' – ' + jEsc(fmtDollar(bz.high)) + '</p>' +
+      '<p class="bz-floor">Floor support: ' + jEsc(fmtDollar(bz.floor)) + '</p>' +
+      '</div>';
+  } else {
+    buyZoneHtml = '<p class="no-zone">No technical buy zone — downtrend conditions.</p>';
+  }
+
+  var verdictBodyHtml = '';
+  if (v.short_term)            verdictBodyHtml += '<p><strong>Short term</strong> &nbsp; ' + jEsc(v.short_term) + '</p>';
+  if (v.long_term)             verdictBodyHtml += '<p><strong>Long term</strong> &nbsp; '  + jEsc(v.long_term)  + '</p>';
+  if (v.accumulation_strategy) verdictBodyHtml += '<p><strong>Strategy</strong> &nbsp; '   + jEsc(v.accumulation_strategy) + '</p>';
+  verdictBodyHtml += buyZoneHtml;
+
+  return (
+    '<div class="panel-header panel-header--' + cls + '">' +
+      '<div class="panel-header-top">' +
+        '<div class="panel-logo-wrap">' + logoHtml + '</div>' +
+        '<div class="panel-title-wrap">' +
+          '<span class="panel-ticker">' + jEsc(s.ticker) + '</span>' +
+          '<span class="panel-name">'   + jEsc(s.name)   + '</span>' +
+        '</div>' +
+        '<span class="action-tag action-tag--' + cls + '">' + jEsc(actionText) + '</span>' +
+      '</div>' +
+      '<div class="panel-price">' + priceHtml + '</div>' +
+      '<div class="panel-meta-row">' +
+        '<span class="panel-sector">' + jEsc(s.sector) + '</span>' +
+        '<span class="cycle-badge cycle-badge--' + cycleClass(s.cycle_stage) + '">' +
+          jEsc(s.cycle_stage || 'NONE') + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-body">' +
+      '<section class="panel-section">' +
+        '<h3 class="panel-section-title">The Story</h3>' +
+        '<div class="panel-story">' + storyHtml + '</div>' +
+      '</section>' +
+      '<section class="panel-section">' +
+        '<h3 class="panel-section-title">Micha Method <span class="panel-tally">' + passCount + '/12</span></h3>' +
+        '<div class="crit-list">' + michaHtml + '</div>' +
+      '</section>' +
+      '<section class="panel-section">' +
+        '<h3 class="panel-section-title">Peter Lynch <span class="panel-tally">' +
+          Number(s.peter_score || 0).toFixed(1) + '/10</span></h3>' +
+        '<div class="peter-bars">' + peterBarsHtml + '</div>' +
+        kmHtml +
+      '</section>' +
+      '<section class="panel-section">' +
+        '<h3 class="panel-section-title">The Verdict</h3>' +
+        '<div class="verdict-action verdict-action--' + cls + '">' + jEsc(actionText) + '</div>' +
+        '<div class="verdict-body">' + verdictBodyHtml + '</div>' +
+      '</section>' +
+    '</div>'
+  );
+}
+
+// ── Sparklines ────────────────────────────────────────────────────────────────
+var sparkCharts = {};
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function renderSparklines() {
+  STOCKS.forEach(function(s) {
+    var canvas = document.getElementById('spark-' + s.ticker);
+    if (!canvas) return;
+    var pts = s.sparkline;
+    if (!pts || pts.length < 2) return;
+    if (sparkCharts[s.ticker]) {
+      try { sparkCharts[s.ticker].destroy(); } catch(e) {}
+    }
+    var rising = pts[pts.length - 1] >= pts[0];
+    var color  = rising ? getCSSVar('--go') : getCSSVar('--stop');
+    sparkCharts[s.ticker] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: pts.map(function(_, i) { return i; }),
+        datasets: [{
+          data: pts,
+          borderColor: color,
+          borderWidth: 1.5,
+          tension: 0.35,
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 0
+        }]
+      },
+      options: {
+        animation: false,
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        }
+      }
+    });
+  });
+}
+
+// ── Radar chart ───────────────────────────────────────────────────────────────
+var radarChart = null;
+
+function renderRadarChart() {
+  var canvas = document.getElementById('radarChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  if (radarChart) { try { radarChart.destroy(); } catch(e) {} radarChart = null; }
+
+  var portfolio = STOCKS.slice(0, PORTFOLIO_COUNT);
+  if (!portfolio.length) return;
+
+  var michaGroups = {
+    'Trend':    ['1_price_above_sma150','2_sma150_slope_positive','3_price_above_sma50','4_sma50_above_sma150'],
+    'Breakout': ['7_breakout_quality','8_retest_quality'],
+    'Volume':   ['9_volume_expansion','10_volume_dryup_before'],
+    'Momentum': ['5_golden_cross_recent','6_atr_shock_recent'],
+    'Strength': ['11_higher_highs_lows','12_rs_vs_sp500']
+  };
+  var peterGroups = {
+    'Trend':    ['revenue_growth','eps_growth'],
+    'Breakout': ['valuation'],
+    'Volume':   ['net_income_trend','cash_flow'],
+    'Momentum': ['management','balance_sheet'],
+    'Strength': ['moat','industry','long_term_compounding']
+  };
+  var labels = Object.keys(michaGroups);
+
+  function avgMicha(group) {
+    var total = 0;
+    portfolio.forEach(function(s) {
+      var crit = s.micha_criteria || {};
+      var hits = group.reduce(function(sum, k) { return sum + (crit[k] ? 1 : 0); }, 0);
+      total += (hits / group.length) * 10;
+    });
+    return total / portfolio.length;
+  }
+  function avgPeter(group) {
+    var total = 0;
+    portfolio.forEach(function(s) {
+      var ps   = s.peter_scores || {};
+      var vals = group.map(function(k) { return ps[k] || 0; });
+      var avg  = vals.reduce(function(a,b) { return a+b; }, 0) / vals.length;
+      total += avg;
+    });
+    return total / portfolio.length;
+  }
+
+  var michaData = labels.map(function(l) { return avgMicha(michaGroups[l]); });
+  var peterData = labels.map(function(l) { return avgPeter(peterGroups[l]); });
+
+  var ink  = getCSSVar('--ink');
+  var go   = getCSSVar('--go');
+  var hold = getCSSVar('--hold');
+
+  radarChart = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Technical (Micha)',
+          data: michaData,
+          borderColor: go,
+          backgroundColor: go + '30',
+          borderWidth: 1.5,
+          pointRadius: 3,
+          pointBackgroundColor: go
+        },
+        {
+          label: 'Fundamental (Peter)',
+          data: peterData,
+          borderColor: hold,
+          backgroundColor: hold + '30',
+          borderWidth: 1.5,
+          pointRadius: 3,
+          pointBackgroundColor: hold
+        }
+      ]
+    },
+    options: {
+      animation: false,
+      responsive: false,
+      scales: {
+        r: {
+          min: 0, max: 10,
+          ticks: { display: false, stepSize: 2 },
+          grid: { color: ink + '25' },
+          angleLines: { color: ink + '25' },
+          pointLabels: {
+            color: ink,
+            font: { family: "'JetBrains Mono'", size: 10 }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: ink,
+            font: { family: "'Source Serif 4'", size: 11 },
+            boxWidth: 12,
+            padding: 10
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Score distribution chart ──────────────────────────────────────────────────
+var distChart = null;
+
+function renderDistChart() {
+  var canvas = document.getElementById('distChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  if (distChart) { try { distChart.destroy(); } catch(e) {} distChart = null; }
+
+  var portfolio = STOCKS.slice(0, PORTFOLIO_COUNT);
+  if (!portfolio.length) return;
+
+  var sorted = portfolio.slice().sort(function(a, b) {
+    var sa = (a.micha_score/12 + (a.peter_score||0)/10) / 2;
+    var sb = (b.micha_score/12 + (b.peter_score||0)/10) / 2;
+    return sb - sa;
+  });
+
+  var ink  = getCSSVar('--ink');
+  var go   = getCSSVar('--go');
+  var stop = getCSSVar('--stop');
+  var hold = getCSSVar('--hold');
+
+  function barColor(s) {
+    var c = actionClass((s.verdict && s.verdict.action) || '');
+    return c === 'go' ? go + 'cc' : c === 'stop' ? stop + 'cc' : hold + 'cc';
+  }
+
+  distChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(function(s) { return s.ticker; }),
+      datasets: [{
+        data: sorted.map(function(s) {
+          return Math.round(((s.micha_score/12 + (s.peter_score||0)/10) / 2) * 100);
+        }),
+        backgroundColor: sorted.map(barColor),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      animation: false,
+      responsive: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ' ' + ctx.raw + '%'; }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          ticks: {
+            color: ink,
+            font: { size: 10 },
+            maxTicksLimit: 5,
+            callback: function(v) { return v + '%'; }
+          },
+          grid: { color: ink + '20' }
+        },
+        y: {
+          ticks: {
+            color: ink,
+            font: { family: "'JetBrains Mono'", size: 10 }
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+  renderSparklines();
+  renderRadarChart();
+  renderDistChart();
+});
+</script>
 </body>
 </html>

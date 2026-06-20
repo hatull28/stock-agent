@@ -255,6 +255,7 @@ def analyze_stock(ticker, benchmark_data):
         "micha_reasons": micha["ai_reasons"],
         "peter_score": peter["peter_score"] if peter else None,
         "peter_summary": peter["summary"] if peter else "",
+        "peter_scores": peter.get("scores", {}) if peter else {},
         "verdict": verdict,
         "cycle_stage":           cycle_stage,
         "cycle_stage_reasoning": cycle_info.get("cycle_stage_reasoning", ""),
