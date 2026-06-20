@@ -230,7 +230,7 @@ Respond ONLY with valid JSON in this format:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
-        temperature=0.2
+        temperature=0
     )
 
     raw = response.choices[0].message.content

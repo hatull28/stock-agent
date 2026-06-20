@@ -89,6 +89,9 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
             {"name": "💼 Portfolio", "value": portfolio_text, "inline": False},
             {"name": "✨ Diversifier Ideas (new sectors)",
              "value": suggestion_text, "inline": False},
+            {"name": "📄 Full Report",
+             "value": "[Open The Wire →](https://hatull28.github.io/stock-agent/daily_report.html)",
+             "inline": False},
         ],
         "footer": {"text": "Analysis, not financial advice"},
     }

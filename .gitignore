@@ -1,5 +1,4 @@
 .env
 venv/
 __pycache__/
-daily_report.html
 daily_report.txt
