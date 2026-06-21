@@ -100,23 +100,34 @@ def _sparkline_points(r):
 
 
 def _fmt_briefing(text):
+    import re
     if not text:
         return ""
-    lines = [
-        ln.strip().lstrip("*#").strip()
-        for ln in text.splitlines()
-        if ln.strip().lstrip("*#").strip()
-    ]
+
+    def _inline_md(s):
+        # **bold** → <strong>, *italic* (non-bold) → <em>
+        s = html.escape(s)
+        s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)
+        s = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', s)
+        return s
+
+    raw_lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    # strip leading markdown heading markers
+    lines = [re.sub(r'^#+\s*', '', ln) for ln in raw_lines]
+    lines = [ln.lstrip('*').strip() if ln.startswith('**') is False else ln for ln in lines]
+    lines = [ln for ln in lines if ln]
     if not lines:
         return ""
 
-    # Pick a pull-quote: first sentence of the middle-ish paragraph
-    para_lines = [l for l in lines if len(l) >= 60 and not (len(l) < 60 and l.isupper())]
+    # Pick a pull-quote from a meaty paragraph near the middle
+    para_lines = [l for l in lines if len(l) >= 80]
     pull_text = ""
     if para_lines:
         mid_para = para_lines[max(0, len(para_lines) // 2 - 1)]
-        dot = mid_para.find(". ")
-        pull_text = mid_para[: dot + 1] if dot > 30 else mid_para[:180]
+        # strip markdown before using as pull quote
+        clean = re.sub(r'\*+', '', mid_para)
+        dot = clean.find(". ")
+        pull_text = clean[: dot + 1] if dot > 30 else clean[:200]
 
     blocks = []
     first_p = True
@@ -124,14 +135,16 @@ def _fmt_briefing(text):
     mid_idx = max(1, len(lines) // 2 - 1)
 
     for i, line in enumerate(lines):
-        if len(line) < 60 and line.isupper():
-            blocks.append(f'<h3 class="brief-sub">{_esc(line)}</h3>')
+        # Section heading: short, all-caps or starts with ##
+        if (len(line) < 60 and line.upper() == line and len(line) > 3) or line.startswith('#'):
+            clean_head = line.lstrip('#').strip()
+            blocks.append(f'<h3 class="brief-sub">{html.escape(clean_head)}</h3>')
         else:
             cls = ' class="drop-cap"' if first_p else ""
-            blocks.append(f'<p{cls}>{_esc(line)}</p>')
+            blocks.append(f'<p{cls}>{_inline_md(line)}</p>')
             first_p = False
         if not pull_done and pull_text and i >= mid_idx:
-            blocks.append(f'<blockquote class="pull-quote">{_esc(pull_text)}</blockquote>')
+            blocks.append(f'<blockquote class="pull-quote">{html.escape(pull_text)}</blockquote>')
             pull_done = True
 
     return "\n".join(blocks)
@@ -195,6 +208,27 @@ def _heat_cell(r):
         f'</div>'
         f'</div>'
     )
+
+
+def _signals_strip(portfolio_results, suggestions):
+    def _pill(r):
+        verdict = r.get("verdict") or {}
+        action = verdict.get("action", "")
+        cls = _action_class(action)
+        ticker = r.get("ticker", "")
+        word = action.split()[0].upper() if action else "—"
+        return (
+            f'<div class="sig-item sig-item--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
+            f'role="button" tabindex="0">'
+            f'<span class="sig-ticker">{_esc(ticker)}</span>'
+            f'<span class="sig-action">{_esc(word)}</span>'
+            f'</div>'
+        )
+    pills = [_pill(r) for r in portfolio_results]
+    if suggestions:
+        pills.append('<div class="sig-divider" aria-hidden="true"></div>')
+        pills += [_pill(r) for r in suggestions]
+    return '\n'.join(pills)
 
 
 def _stock_card(r):
@@ -498,10 +532,59 @@ body {
 .heat-cell--stop  .heat-action { color: var(--stop); }
 .heat-cell--neutral .heat-action { color: var(--neutral); }
 
+/* ── Signals strip ─────────────────────────────────────────────────────────── */
+.signals-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 1.1rem 0 1.5rem;
+  border-bottom: 3px solid var(--rule);
+  margin-bottom: 2.75rem;
+}
+.sig-divider {
+  width: 1.5px;
+  height: 2.8rem;
+  background: var(--rule);
+  margin: 0 0.3rem;
+  flex-shrink: 0;
+}
+.sig-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem 0.45rem;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 2px solid;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+}
+.sig-item:hover { opacity: 0.78; transform: translateY(-1px); }
+.sig-item--go      { background: color-mix(in srgb, var(--go)   12%, transparent); border-color: var(--go); }
+.sig-item--hold    { background: color-mix(in srgb, var(--hold) 12%, transparent); border-color: var(--hold); }
+.sig-item--stop    { background: color-mix(in srgb, var(--stop) 12%, transparent); border-color: var(--stop); }
+.sig-item--neutral { background: var(--card-bg); border-color: var(--rule); }
+.sig-ticker {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 900;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--ink);
+}
+.sig-action {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 0.2rem;
+}
+
 /* ── Briefing ──────────────────────────────────────────────────────────────── */
 .briefing-layout {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1fr 300px;
   gap: 3rem;
   align-items: start;
 }
@@ -516,8 +599,8 @@ body {
 .feature-hed {
   font-family: "Playfair Display", Georgia, serif;
   font-weight: 900;
-  font-size: clamp(1.6rem, 3vw, 2.5rem);
-  line-height: 1.15;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  line-height: 1.08;
   margin-bottom: 0.85rem;
   border-bottom: 3px solid var(--rule);
   padding-bottom: 0.65rem;
@@ -557,6 +640,29 @@ body {
   quotes: none;
 }
 .briefing-sidebar { position: sticky; top: 1rem; }
+.dispatch-duck {
+  border: 3px solid var(--rule);
+  overflow: hidden;
+  background: #111;
+}
+.dispatch-duck img {
+  width: 100%;
+  display: block;
+  filter: grayscale(15%) contrast(1.08);
+  transition: filter 0.3s;
+}
+.dispatch-duck img:hover { filter: grayscale(0%) contrast(1.05); }
+.dispatch-duck-caption {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 0.5rem 0.65rem;
+  border-top: 1px solid var(--rule);
+  background: var(--card-bg);
+  line-height: 1.5;
+}
 .sidebar-block {
   border: 1.5px solid var(--rule);
   background: var(--card-bg);
@@ -572,6 +678,13 @@ body {
   margin-bottom: 0.75rem;
   display: block;
 }
+.breakdown-charts {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.breakdown-charts .sidebar-block { flex: 1 1 280px; max-width: 360px; }
 
 /* ── Dispatch grids ────────────────────────────────────────────────────────── */
 .dispatch-grid {
@@ -1382,8 +1495,8 @@ body {
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 1000px) {
   .briefing-layout { grid-template-columns: 1fr; }
-  .briefing-sidebar { position: static; display: flex; gap: 1rem; flex-wrap: wrap; }
-  .sidebar-block { flex: 1; min-width: 220px; }
+  .briefing-sidebar { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .dispatch-duck { max-width: 340px; }
 }
 @media (max-width: 820px) {
   .dispatch-grid { grid-template-columns: 1fr; }
@@ -2185,7 +2298,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     stocks_json = json.dumps(stocks_payload, ensure_ascii=False, default=_json_default)
 
     # HTML sections
-    heatmap_cells = "\n".join(_heat_cell(r) for r in portfolio_results)
+    signals_html  = _signals_strip(portfolio_results, suggestions)
     briefing_html = _fmt_briefing(newspaper_text)
     portfolio_cards = "\n".join(_stock_card(r) for r in portfolio_results)
     suggestion_cards = "\n".join(_suggestion_card(r) for r in suggestions)
@@ -2227,23 +2340,11 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     </div>
   </header>
 
-  <section class="section">
-    <div class="section-rule">
-      <div class="section-rule-inner">
-        <span class="section-rule-label">Portfolio Heat Map</span>
-      </div>
-    </div>
-    <div class="heatmap-grid">
-{heatmap_cells}
-    </div>
-  </section>
+  <div class="signals-strip">
+{signals_html}
+  </div>
 
   <section class="section">
-    <div class="section-rule">
-      <div class="section-rule-inner">
-        <span class="section-rule-label">Today&#8217;s Briefing</span>
-      </div>
-    </div>
     <div class="briefing-layout">
       <div class="briefing-body">
         <p class="feature-kicker">Daily Market Intelligence</p>
@@ -2253,13 +2354,9 @@ def build_report(portfolio_results, suggestions, newspaper_text,
         </div>
       </div>
       <aside class="briefing-sidebar">
-        <div class="sidebar-block">
-          <span class="sidebar-label">Portfolio Composition</span>
-          <canvas id="radarChart" width="260" height="260"></canvas>
-        </div>
-        <div class="sidebar-block">
-          <span class="sidebar-label">Portfolio Ranking</span>
-          <canvas id="distChart" width="260" height="180"></canvas>
+        <div class="dispatch-duck">
+          <img src="assets/duck.png" alt="Morning Edition" loading="lazy">
+          <p class="dispatch-duck-caption">Morning Edition &mdash; The Wire</p>
         </div>
       </aside>
     </div>
@@ -2286,6 +2383,24 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     </div>
     <div class="suggest-grid">
 {suggestion_cards}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Portfolio Breakdown</span>
+      </div>
+    </div>
+    <div class="breakdown-charts">
+      <div class="sidebar-block">
+        <span class="sidebar-label">Portfolio Composition</span>
+        <canvas id="radarChart" width="300" height="300"></canvas>
+      </div>
+      <div class="sidebar-block">
+        <span class="sidebar-label">Portfolio Ranking</span>
+        <canvas id="distChart" width="300" height="200"></canvas>
+      </div>
     </div>
   </section>
 
