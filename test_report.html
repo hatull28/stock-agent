@@ -321,7 +321,7 @@ body {
   color: var(--ink-dim);
   quotes: none;
 }
-.briefing-sidebar { position: sticky; top: 1rem; }
+.briefing-sidebar { }
 .dispatch-duck {
   border: 3px solid var(--rule);
   overflow: hidden;
@@ -497,15 +497,17 @@ body {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.6rem;
   color: var(--ink-dim);
-  width: 2.8rem;
+  width: 3.5rem;
   flex-shrink: 0;
   letter-spacing: 0.04em;
 }
 .score-track {
   flex: 1;
-  height: 5px;
+  height: 8px;
   background: rgba(0,0,0,0.1);
   position: relative;
+  border-radius: 2px;
+  overflow: hidden;
 }
 [data-theme="dark"] .score-track { background: rgba(255,255,255,0.1); }
 .score-fill {
@@ -558,12 +560,45 @@ body {
 }
 .sector-rs--up   { color: var(--go);      background: color-mix(in srgb, var(--go)   14%, transparent); }
 .sector-rs--down { color: var(--stop);    background: color-mix(in srgb, var(--stop) 14%, transparent); }
-.card-oneliner {
-  font-size: 0.83rem;
+.card-divider {
+  height: 1px;
+  background: var(--rule);
+  opacity: 0.12;
+  margin: 0.55rem 0 0.6rem;
+}
+.card-stats {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.stat-item {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.57rem;
   color: var(--ink-dim);
-  line-height: 1.45;
-  font-style: italic;
+  background: rgba(0,0,0,0.06);
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  letter-spacing: 0.03em;
+}
+[data-theme="dark"] .stat-item { background: rgba(255,255,255,0.07); }
+.buy-zone-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.57rem;
+  color: var(--go);
+  border: 1px solid var(--go);
+  padding: 0.08rem 0.35rem;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+.card-oneliner {
+  font-size: 0.84rem;
+  color: var(--ink);
+  line-height: 1.5;
   margin-bottom: 0.4rem;
+  padding-left: 0.65rem;
+  border-left: 2px solid var(--rule);
+  opacity: 0.75;
 }
 .card-cta {
   font-family: "JetBrains Mono", monospace;
@@ -1119,7 +1154,32 @@ body {
 [data-theme="dark"] .lynch-tab-label { color: #c8a830; }
 [data-theme="dark"] .lynch-tab-hint { color: #907830; }
 [data-theme="dark"] .lynch-option--active { background: rgba(255,200,0,0.12); border-color: #7a6830; }
-@media (max-width: 600px) { .lynch-tab { display: none !important; } }
+/* Lynch sticker inside the panel — visible on mobile where the tab is hidden */
+.panel-sticker {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  padding: 0.28rem 0.7rem 0.28rem 0.45rem;
+  background: #fffbe6;
+  border: 1.5px solid #e8d870;
+  border-radius: 20px;
+  width: fit-content;
+}
+.ps-emoji { font-size: 1.5rem; line-height: 1; }
+.ps-label {
+  font-family: "Caveat", cursive;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #7a6010;
+}
+[data-theme="dark"] .panel-sticker { background: #2e2a10; border-color: #7a6830; }
+[data-theme="dark"] .ps-label { color: #c8a830; }
+
+@media (max-width: 600px) {
+  .lynch-tab { display: none !important; }
+  .panel-sticker { display: flex; }
+}
 
 /* ── Panel: The Verdict ────────────────────────────────────────────────────── */
 .verdict-action {
@@ -1186,12 +1246,24 @@ body {
   .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) {
-  .wrap { padding: 0 1rem 2rem; }
+  .wrap { padding: 0 0.85rem 2rem; }
   .suggest-grid  { grid-template-columns: 1fr; }
   .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
-  .logotype { font-size: 2.8rem; }
-  .detail-panel { width: 100vw; }
+  .logotype { font-size: clamp(2.2rem, 11vw, 2.8rem); }
+  .masthead-top { flex-wrap: wrap; gap: 0.5rem; }
+  .detail-panel { width: 100vw; border-left: none; border-top: 4px solid var(--rule); }
+  .panel-close { min-width: 44px; min-height: 44px; }
+  .panel-body { padding: 0.9rem 0.85rem; }
+  .sig-ticker { font-size: 1.1rem; }
+  .sig-item { padding: 0.38rem 0.65rem; }
+  .panel-section-title { font-size: 0.9rem; }
+  .verdict-action { font-size: 1.5rem; }
+  .heat-cell { height: 75px; }
+  .heat-ticker { font-size: 1.2rem; }
 }
+
+/* iOS smooth scroll in panel */
+.panel-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 </style>
 </head>
 <body>
@@ -1258,8 +1330,8 @@ body {
       </div>
     </div>
     <div class="dispatch-grid">
-<article class="card card--go" onclick="openPanel('AAPL')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/apple.com" alt="AAPL" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">AA</span><div class="card-id"><span class="card-ticker">AAPL</span><span class="card-name">Apple Inc.</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$191.45</span><span class="price-change up">▲ +2.31 (+1.22%)</span></div><canvas id="spark-AAPL" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:75%"></div></div><span class="score-val">9/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:78%"></div></div><span class="score-val">7.8/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Technology</span><span class="sector-rs sector-rs--up">vs XLK +3.8% ▲</span></div><p class="card-oneliner">The 1-6 month setup favors accumulation on pullbacks toward the SMA50 near $185.</p><span class="card-cta">Read full report &#8594;</span></article>
-<article class="card card--go" onclick="openPanel('MSFT')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/microsoft.com" alt="MSFT" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">MS</span><div class="card-id"><span class="card-ticker">MSFT</span><span class="card-name">Microsoft Corp.</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$415.20</span></div><canvas id="spark-MSFT" class="sparkline" width="300" height="52"></canvas><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:83%"></div></div><span class="score-val">10/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:82%"></div></div><span class="score-val">8.2/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Technology</span><span class="sector-rs sector-rs--up">vs XLK +2.1% ▲</span></div><p class="card-oneliner"></p><span class="card-cta">Read full report &#8594;</span></article>
+<article class="card card--go" onclick="openPanel('AAPL')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/apple.com" alt="AAPL" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">AA</span><div class="card-id"><span class="card-ticker">AAPL</span><span class="card-name">Apple Inc.</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$191.45</span><span class="price-change up">▲ +2.31 (+1.22%)</span></div><canvas id="spark-AAPL" class="sparkline" width="300" height="52"></canvas><div class="card-divider"></div><div class="card-bars"><div class="score-row"><span class="score-label">MICHA</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:75%"></div></div><span class="score-val">9/12</span></div><div class="score-row"><span class="score-label">PETER</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:78%"></div></div><span class="score-val">7.8/10</span></div></div><div class="card-stats"><span class="stat-item">P/E 28.5x</span><span class="stat-item">Rev +5%</span><span class="stat-item">Margin 26%</span></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Technology</span><span class="sector-rs sector-rs--up">vs XLK +3.8% ▲</span><span class="buy-zone-badge">Buy $182&#8211;$188</span></div><p class="card-oneliner">The 1-6 month setup favors accumulation on pullbacks toward the SMA50 near $185.</p><span class="card-cta">Open full analysis &#8594;</span></article>
+<article class="card card--go" onclick="openPanel('MSFT')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/microsoft.com" alt="MSFT" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">MS</span><div class="card-id"><span class="card-ticker">MSFT</span><span class="card-name">Microsoft Corp.</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$415.20</span></div><canvas id="spark-MSFT" class="sparkline" width="300" height="52"></canvas><div class="card-divider"></div><div class="card-bars"><div class="score-row"><span class="score-label">MICHA</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:83%"></div></div><span class="score-val">10/12</span></div><div class="score-row"><span class="score-label">PETER</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:82%"></div></div><span class="score-val">8.2/10</span></div></div><div class="card-stats"><span class="stat-item">P/E 35.1x</span><span class="stat-item">Rev +17%</span><span class="stat-item">Margin 37%</span></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Technology</span><span class="sector-rs sector-rs--up">vs XLK +2.1% ▲</span></div><p class="card-oneliner"></p><span class="card-cta">Open full analysis &#8594;</span></article>
     </div>
   </section>
 
@@ -1271,8 +1343,8 @@ body {
       </div>
     </div>
     <div class="suggest-grid">
-<article class="sug-card card--go" onclick="openPanel('NVDA')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/nvidia.com" alt="NVDA" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">NV</span><div class="card-id"><span class="card-ticker">NVDA</span><span class="card-name">NVIDIA Corporation</span></div><span class="action-tag action-tag--go">BUY</span></div><div class="card-price"><span class="price-now">$1,148.25</span><span class="price-change down">▼ -12.50 (-1.08%)</span></div><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:92%"></div></div><span class="score-val">11/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:85%"></div></div><span class="score-val">8.5/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Semiconductors</span><span class="sector-rs sector-rs--up">vs SOXX +12.7% ▲</span></div><p class="card-oneliner">Momentum favors immediate entry with a target toward $1,400 in 3-6 months.</p></article>
-<article class="sug-card card--go" onclick="openPanel('TSM')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/tsmc.com" alt="TSM" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">TS</span><div class="card-id"><span class="card-ticker">TSM</span><span class="card-name">TSMC</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$185.40</span></div><div class="card-bars"><div class="score-row"><span class="score-label">TECH</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:75%"></div></div><span class="score-val">9/12</span></div><div class="score-row"><span class="score-label">FUND</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:79%"></div></div><span class="score-val">7.9/10</span></div></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Semiconductors</span><span class="sector-rs sector-rs--down">vs SOXX -3.2% ▼</span></div><p class="card-oneliner"></p></article>
+<article class="sug-card card--go" onclick="openPanel('NVDA')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/nvidia.com" alt="NVDA" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">NV</span><div class="card-id"><span class="card-ticker">NVDA</span><span class="card-name">NVIDIA Corporation</span></div><span class="action-tag action-tag--go">BUY</span></div><div class="card-price"><span class="price-now">$1,148.25</span><span class="price-change down">▼ -12.50 (-1.08%)</span></div><div class="card-divider"></div><div class="card-bars"><div class="score-row"><span class="score-label">MICHA</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:92%"></div></div><span class="score-val">11/12</span></div><div class="score-row"><span class="score-label">PETER</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:85%"></div></div><span class="score-val">8.5/10</span></div></div><div class="card-stats"><span class="stat-item">P/E 55.2x</span><span class="stat-item">Rev +122%</span><span class="stat-item">Margin 56%</span></div><div class="card-meta"><span class="cycle-badge cycle-badge--mid">MID</span><span class="card-sector">Semiconductors</span><span class="sector-rs sector-rs--up">vs SOXX +12.7% ▲</span></div><p class="card-oneliner">Momentum favors immediate entry with a target toward $1,400 in 3-6 months.</p><span class="card-cta">Open full analysis &#8594;</span></article>
+<article class="sug-card card--go" onclick="openPanel('TSM')" role="button" tabindex="0"><div class="card-header"><img class="card-logo" width="32" height="32" src="https://logo.clearbit.com/tsmc.com" alt="TSM" loading="lazy" onerror="handleLogoError(this)"><span class="card-logo-fallback" style="display:none">TS</span><div class="card-id"><span class="card-ticker">TSM</span><span class="card-name">TSMC</span></div><span class="action-tag action-tag--go">ACCUMULATE</span></div><div class="card-price"><span class="price-now">$185.40</span></div><div class="card-divider"></div><div class="card-bars"><div class="score-row"><span class="score-label">MICHA</span><div class="score-track"><div class="score-fill score-fill--tech" style="width:75%"></div></div><span class="score-val">9/12</span></div><div class="score-row"><span class="score-label">PETER</span><div class="score-track"><div class="score-fill score-fill--fund" style="width:79%"></div></div><span class="score-val">7.9/10</span></div></div><div class="card-stats"><span class="stat-item">P/E 22.8x</span><span class="stat-item">Rev +38%</span><span class="stat-item">Margin 40%</span></div><div class="card-meta"><span class="cycle-badge cycle-badge--early">EARLY</span><span class="card-sector">Semiconductors</span><span class="sector-rs sector-rs--down">vs SOXX -3.2% ▼</span></div><p class="card-oneliner"></p><span class="card-cta">Open full analysis &#8594;</span></article>
     </div>
   </section>
 
@@ -1755,6 +1827,7 @@ function buildPanelHTML(s) {
         '<span class="cycle-badge cycle-badge--' + cycleClass(s.cycle_stage) + '">' +
           jEsc(s.cycle_stage || 'NONE') + '</span>' +
       '</div>' +
+      (function() { var st = lynchSticker(s); return st ? '<div class="panel-sticker"><span class="ps-emoji">' + st.emoji + '</span><span class="ps-label">' + jEsc(st.label) + '</span></div>' : ''; })() +
     '</div>' +
     '<div class="panel-body">' +
       '<section class="panel-section">' +

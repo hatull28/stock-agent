@@ -1509,7 +1509,32 @@ body {
 [data-theme="dark"] .lynch-tab-label { color: #c8a830; }
 [data-theme="dark"] .lynch-tab-hint { color: #907830; }
 [data-theme="dark"] .lynch-option--active { background: rgba(255,200,0,0.12); border-color: #7a6830; }
-@media (max-width: 600px) { .lynch-tab { display: none !important; } }
+/* Lynch sticker inside the panel — visible on mobile where the tab is hidden */
+.panel-sticker {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  padding: 0.28rem 0.7rem 0.28rem 0.45rem;
+  background: #fffbe6;
+  border: 1.5px solid #e8d870;
+  border-radius: 20px;
+  width: fit-content;
+}
+.ps-emoji { font-size: 1.5rem; line-height: 1; }
+.ps-label {
+  font-family: "Caveat", cursive;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #7a6010;
+}
+[data-theme="dark"] .panel-sticker { background: #2e2a10; border-color: #7a6830; }
+[data-theme="dark"] .ps-label { color: #c8a830; }
+
+@media (max-width: 600px) {
+  .lynch-tab { display: none !important; }
+  .panel-sticker { display: flex; }
+}
 
 /* ── Panel: The Verdict ────────────────────────────────────────────────────── */
 .verdict-action {
@@ -1576,12 +1601,24 @@ body {
   .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) {
-  .wrap { padding: 0 1rem 2rem; }
+  .wrap { padding: 0 0.85rem 2rem; }
   .suggest-grid  { grid-template-columns: 1fr; }
   .heatmap-grid  { grid-template-columns: repeat(2, 1fr); }
-  .logotype { font-size: 2.8rem; }
-  .detail-panel { width: 100vw; }
+  .logotype { font-size: clamp(2.2rem, 11vw, 2.8rem); }
+  .masthead-top { flex-wrap: wrap; gap: 0.5rem; }
+  .detail-panel { width: 100vw; border-left: none; border-top: 4px solid var(--rule); }
+  .panel-close { min-width: 44px; min-height: 44px; }
+  .panel-body { padding: 0.9rem 0.85rem; }
+  .sig-ticker { font-size: 1.1rem; }
+  .sig-item { padding: 0.38rem 0.65rem; }
+  .panel-section-title { font-size: 0.9rem; }
+  .verdict-action { font-size: 1.5rem; }
+  .heat-cell { height: 75px; }
+  .heat-ticker { font-size: 1.2rem; }
 }
+
+/* iOS smooth scroll in panel */
+.panel-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 '''
 
 
@@ -2020,6 +2057,7 @@ function buildPanelHTML(s) {
         '<span class="cycle-badge cycle-badge--' + cycleClass(s.cycle_stage) + '">' +
           jEsc(s.cycle_stage || 'NONE') + '</span>' +
       '</div>' +
+      (function() { var st = lynchSticker(s); return st ? '<div class="panel-sticker"><span class="ps-emoji">' + st.emoji + '</span><span class="ps-label">' + jEsc(st.label) + '</span></div>' : ''; })() +
     '</div>' +
     '<div class="panel-body">' +
       '<section class="panel-section">' +
