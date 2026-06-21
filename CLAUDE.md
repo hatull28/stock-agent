@@ -260,3 +260,6 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 - `week_52_low` is `None` for stocks with fewer than 252 trading days — display as "N/A" rather than treating it as a price level
 - Contradiction retry in `combined_verdict()` is keyword-based — it catches obvious mismatches but won't catch subtle semantic inversions
 - The 4 neutral-pinned Peter sub-scores are still averaged into the overall score — the caveat is visible in the UI but the score itself is not restructured
+- **SSL on Python 3.14 + Windows**: OpenSSL 3.5.7 (June 2026) can't verify Yahoo Finance's cert chain (server doesn't send intermediates). Fix: `truststore` package injected at the top of `run.py`, plus explicit `requests.Session` passed to every `yf.Ticker()` call in `data.py` and `fundamentals.py` — this bypasses `curl_cffi` (yfinance's preferred backend, which also fails). If you reinstall packages and SSL breaks again, run `pip install truststore`.
+- **Windows console encoding**: Python 3.14 defaults to `cp1252` on Windows, which can't encode Unicode chars like `≤`. Fixed by `sys.stdout.reconfigure(encoding="utf-8")` at the top of `run.py`. Don't remove this line.
+- `week_52_low` threshold is 245 rows (not 252) — the `requests` backend returns 251 trading days for a 1y period, so 252 would incorrectly return `None` for established stocks
