@@ -1066,6 +1066,125 @@ body {
   display: block;
 }
 
+/* ── Panel: Peter Lynch toggle ─────────────────────────────────────────────── */
+.peter-toggle-btn {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.56rem;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-dim);
+  padding: 0.12rem 0.45rem;
+  letter-spacing: 0.04em;
+  margin-left: 0.6rem;
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s;
+}
+.peter-toggle-btn:hover { background: var(--rule); color: var(--ink); }
+.peter-expert-view.hidden,
+.peter-simple-view.hidden { display: none; }
+
+/* ── Panel: Key Financials table ────────────────────────────────────────────── */
+.kf-table { margin-top: 1rem; }
+.kf-section-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  margin: 0.75rem 0 0.3rem;
+  border-top: 1px solid var(--rule);
+  padding-top: 0.45rem;
+}
+.kf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.kf-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.60rem;
+  color: var(--ink-dim);
+}
+.kf-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.70rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Panel: Lynch handwritten note ──────────────────────────────────────────── */
+.lynch-note {
+  background: #fdf8ee;
+  border: 1px solid #d4c9a0;
+  border-radius: 2px;
+  padding: 1.2rem 1.4rem;
+  margin-top: 0.75rem;
+  transform: rotate(-0.4deg);
+  box-shadow: 2px 3px 8px rgba(0,0,0,0.10);
+}
+[data-theme="dark"] .lynch-note { background: #2a2518; border-color: #5a5030; }
+.lynch-intro {
+  font-family: "Caveat", cursive;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #3a3020;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed #d4c9a0;
+}
+[data-theme="dark"] .lynch-intro { color: #d8ccaa; border-bottom-color: #5a5030; }
+.lynch-cards { display: flex; flex-direction: column; gap: 0.55rem; }
+.lynch-metric {
+  padding: 0.55rem 0.7rem;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.55);
+  border-left: 3px solid;
+}
+[data-theme="dark"] .lynch-metric { background: rgba(0,0,0,0.18); }
+.lynch-metric--green { border-left-color: #3a7a3a; }
+.lynch-metric--amber { border-left-color: #c47a00; }
+.lynch-metric--red   { border-left-color: #a03020; }
+.lynch-metric-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.2rem;
+}
+.lynch-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lynch-dot--green { background: #3a7a3a; }
+.lynch-dot--amber { background: #c47a00; }
+.lynch-dot--red   { background: #a03020; }
+.lynch-metric-label {
+  font-family: "Caveat", cursive;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #3a3020;
+  flex: 1;
+}
+[data-theme="dark"] .lynch-metric-label { color: #d8ccaa; }
+.lynch-metric-num {
+  font-family: "Caveat", cursive;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #3a3020;
+}
+[data-theme="dark"] .lynch-metric-num { color: #d8ccaa; }
+.lynch-metric-body {
+  font-family: "Caveat", cursive;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #5a4e30;
+  margin: 0;
+}
+[data-theme="dark"] .lynch-metric-body { color: #b8a880; }
+
 /* ── Panel: The Verdict ────────────────────────────────────────────────────── */
 .verdict-action {
   font-family: "Playfair Display", Georgia, serif;
@@ -1202,6 +1321,9 @@ function fmtDollar(n) {
   if (n == null) return '—';
   return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+function fmtPct(v)   { if (v == null) return '—'; var p = (v * 100).toFixed(1); return (v >= 0 ? '+' : '') + p + '%'; }
+function fmtBil(v)   { if (v == null) return '—'; return '$' + (v / 1e9).toFixed(1) + 'B'; }
+function fmtRatio(v) { if (v == null) return '—'; return Number(v).toFixed(1) + 'x'; }
 
 var CRITERIA_LABELS = {
   '1_price_above_sma150':   'Price above SMA 150',
@@ -1335,35 +1457,138 @@ function buildPanelHTML(s) {
   });
 
   // Section 3: Peter Lynch
-  var ps = s.peter_scores || {};
-  var peterBarsHtml = '';
-  PETER_ORDER.forEach(function(key) {
-    var score = ps[key];
-    if (score == null) return;
-    var label = PETER_LABELS[key] || key;
-    var pct2  = Math.round((score / 10) * 100);
-    peterBarsHtml += '<div class="peter-bar-row">' +
-      '<span class="peter-bar-label">' + jEsc(label) + '</span>' +
-      '<div class="peter-bar-track"><div class="peter-bar-fill" style="width:' + pct2 + '%"></div></div>' +
-      '<span class="peter-bar-val">' + Number(score).toFixed(1) + '</span>' +
-      '</div>';
-  });
 
-  var keyMetrics = [
-    {label:'Valuation',   key:'valuation'},
-    {label:'EPS Growth',  key:'eps_growth'},
-    {label:'Net Income',  key:'net_income_trend'},
-    {label:'Management',  key:'management'}
-  ];
-  var kmHtml = '<div class="key-metrics-grid">';
-  keyMetrics.forEach(function(m) {
-    var val = ps[m.key] != null ? Number(ps[m.key]).toFixed(1) + '/10' : '—';
-    kmHtml += '<div class="key-metric">' +
-      '<span class="key-metric-label">' + jEsc(m.label) + '</span>' +
-      '<span class="key-metric-val">' + jEsc(val) + '</span>' +
+  // Key Financials table
+  function kfRow(label, val) {
+    return '<div class="kf-row"><span class="kf-label">' + jEsc(label) +
+      '</span><span class="kf-val">' + jEsc(val) + '</span></div>';
+  }
+  function kfHead(title) {
+    return '<div class="kf-section-title">' + jEsc(title) + '</div>';
+  }
+  var kfHtml = '<div class="kf-table">' +
+    kfHead('Price & Market') +
+    kfRow('Price',      fmtDollar(pl.price_now)) +
+    kfRow('SMA 50',     fmtDollar(pl.sma50)) +
+    kfRow('SMA 150',    fmtDollar(pl.sma150)) +
+    kfRow('Market Cap', fmtBil(s.market_cap)) +
+    kfHead('Valuation') +
+    kfRow('P/E (TTM)',   fmtRatio(s.pe_ratio)) +
+    kfRow('Forward P/E', fmtRatio(s.forward_pe)) +
+    kfRow('PEG Ratio',   fmtRatio(s.peg_ratio)) +
+    kfHead('Growth & Margins') +
+    kfRow('Revenue Growth',  fmtPct(s.revenue_growth)) +
+    kfRow('Earnings Growth', fmtPct(s.earnings_growth)) +
+    kfRow('Profit Margin',   fmtPct(s.profit_margin)) +
+    kfRow('Return on Equity',fmtPct(s.return_on_equity)) +
+    kfHead('Balance Sheet') +
+    kfRow('Debt / Equity',   fmtRatio(s.debt_to_equity)) +
+    kfRow('Free Cash Flow',  fmtBil(s.free_cash_flow)) +
+    '</div>';
+
+  // Simple View: handwritten Lynch note with visual metric cards
+  function lSig(metric, v) {
+    if (metric === 'pe_ratio')         return v < 20 ? 'green' : v < 35 ? 'amber' : 'red';
+    if (metric === 'peg_ratio')        return v < 1  ? 'green' : v < 2  ? 'amber' : 'red';
+    if (metric === 'revenue_growth')   return v > 0.20 ? 'green' : v > 0.05 ? 'amber' : 'red';
+    if (metric === 'earnings_growth')  return v > 0.15 ? 'green' : v > 0.05 ? 'amber' : 'red';
+    if (metric === 'profit_margin')    return v > 0.20 ? 'green' : v > 0.10 ? 'amber' : 'red';
+    if (metric === 'free_cash_flow')   return v > 0 ? 'green' : 'red';
+    if (metric === 'debt_to_equity')   return v < 0.5 ? 'green' : v < 1.5 ? 'amber' : 'red';
+    if (metric === 'return_on_equity') return v > 0.20 ? 'green' : v > 0.10 ? 'amber' : 'red';
+    return 'amber';
+  }
+  function lCard(sig, label, valStr, body) {
+    return '<div class="lynch-metric lynch-metric--' + sig + '">' +
+      '<div class="lynch-metric-head">' +
+        '<span class="lynch-dot lynch-dot--' + sig + '"></span>' +
+        '<span class="lynch-metric-label">' + jEsc(label) + '</span>' +
+        '<span class="lynch-metric-num">' + jEsc(valStr) + '</span>' +
+      '</div>' +
+      '<p class="lynch-metric-body">' + jEsc(body) + '</p>' +
       '</div>';
-  });
-  kmHtml += '</div>';
+  }
+
+  var lynchCards = '';
+
+  if (s.pe_ratio != null) {
+    var peSig  = lSig('pe_ratio', s.pe_ratio);
+    var peBody = s.pe_ratio < 15 ? "The P/E is how many years of today's earnings you are paying for. Below 15 is cheap — the market is not pricing in much growth. Worth asking why it is that low." :
+                 s.pe_ratio < 25 ? "The P/E is how many years of today's earnings you are paying for. Under 25 is reasonable for a steady grower — not a screaming bargain, but not reckless either." :
+                 s.pe_ratio < 40 ? "The P/E is how many years of today's earnings you are paying for. You are paying up here. That is fine as long as earnings growth keeps accelerating — but it leaves no margin for error." :
+                                   "The P/E is how many years of today's earnings you are paying for. This is expensive. You need extraordinary growth to justify it. One missed quarter and the stock can fall hard.";
+    lynchCards += lCard(peSig, 'P/E Ratio', Number(s.pe_ratio).toFixed(1) + 'x', peBody);
+  }
+
+  if (s.peg_ratio != null) {
+    var pegSig  = lSig('peg_ratio', s.peg_ratio);
+    var pegBody = s.peg_ratio < 0.5 ? "My favorite metric. It divides the P/E by the earnings growth rate — so you can compare a fast grower to a slow one fairly. Below 0.5 is genuinely undervalued relative to growth. Rare. I would look hard at this one." :
+                  s.peg_ratio < 1.0 ? "My favorite metric. It divides the P/E by the earnings growth rate. Below 1 is the sweet spot — you are getting growth at a reasonable price. This is where I like to buy." :
+                  s.peg_ratio < 2.0 ? "My favorite metric. It divides the P/E by the earnings growth rate. A PEG of 1 is fair value. Between 1 and 2 is acceptable for a high-quality business — not a bargain, but not a rip-off." :
+                                      "My favorite metric. It divides the P/E by the earnings growth rate. Above 2 means you are paying a meaningful premium for growth. The story had better be very compelling.";
+    lynchCards += lCard(pegSig, 'PEG Ratio', Number(s.peg_ratio).toFixed(2) + 'x', pegBody);
+  }
+
+  if (s.revenue_growth != null) {
+    var revSign = s.revenue_growth >= 0 ? '+' : '';
+    var revVal  = revSign + (s.revenue_growth * 100).toFixed(1) + '%';
+    var revSig  = lSig('revenue_growth', s.revenue_growth);
+    var revBody = s.revenue_growth > 0.25 ? "Revenue is the top line — how fast the business is actually expanding sales. I split companies into slow growers (under 10%), stalwarts (10-20%), and fast growers (above 20%). Above 25% is fast-grower territory. This is where ten-baggers come from." :
+                  s.revenue_growth > 0.10 ? "Revenue is the top line — how fast the business is actually expanding sales. I split companies into slow growers (under 10%), stalwarts (10-20%), and fast growers (above 20%). This is a stalwart — solid, dependable, but not a rocket ship." :
+                  s.revenue_growth > 0    ? "Revenue is the top line — how fast the business is actually expanding sales. Under 10% puts this in slow-grower territory. Fine for a dividend stock or a value play, but I would not expect big capital gains without an acceleration." :
+                                            "Revenue is the top line — how fast the business is expanding. Revenue is actually shrinking here. I want to understand exactly why before I get involved. Is this a one-time issue or a structural problem?";
+    lynchCards += lCard(revSig, 'Revenue Growth', revVal, revBody);
+  }
+
+  if (s.earnings_growth != null) {
+    var epsSign = s.earnings_growth >= 0 ? '+' : '';
+    var epsVal  = epsSign + (s.earnings_growth * 100).toFixed(1) + '%';
+    var epsSig  = lSig('earnings_growth', s.earnings_growth);
+    var epsBody = s.earnings_growth > 0.20 ? "Earnings per share growth is ultimately what drives stock prices over time. A company compounding earnings above 20% per year is a serious wealth builder — find one of those and hold it." :
+                  s.earnings_growth > 0.10 ? "Earnings per share growth is ultimately what drives stock prices over time. 10-20% is solid and consistent. Not exciting, but this is the kind of business that rewards patience." :
+                  s.earnings_growth > 0    ? "Earnings per share growth is ultimately what drives stock prices over time. Below 10% is modest. The P/E ratio should reflect that — you should not be paying a growth-stock price for slow earnings growth." :
+                                             "Earnings per share growth is ultimately what drives stock prices over time. Earnings are actually falling. This is a yellow flag. Could be temporary, but I need a good explanation before I am comfortable.";
+    lynchCards += lCard(epsSig, 'Earnings Growth', epsVal, epsBody);
+  }
+
+  if (s.profit_margin != null) {
+    var pmVal  = (s.profit_margin * 100).toFixed(1) + '%';
+    var pmSig  = lSig('profit_margin', s.profit_margin);
+    var pmBody = s.profit_margin > 0.20 ? "For every $100 in revenue, the company keeps $" + (s.profit_margin * 100).toFixed(1) + " as profit. That is pricing power — only businesses with a real competitive edge can sustain margins like this. I love high-margin companies; they can survive recessions that kill the competition." :
+                 s.profit_margin > 0.10 ? "For every $100 in revenue, the company keeps $" + (s.profit_margin * 100).toFixed(1) + " as profit. Decent. The business earns a fair share of what it brings in. Watch whether margins are expanding or contracting over time — direction matters as much as level." :
+                 s.profit_margin > 0.05 ? "For every $100 in revenue, the company keeps $" + (s.profit_margin * 100).toFixed(1) + " as profit. These are thin margins. One bad quarter — rising costs, a price war, a supply shock — and profits can evaporate. Needs strong volume to make up for it." :
+                                          "For every $100 in revenue, the company keeps barely anything as profit. This is a brutally competitive business. Small problems become big ones fast. I would need a very compelling reason to own it at these margins.";
+    lynchCards += lCard(pmSig, 'Profit Margin', pmVal, pmBody);
+  }
+
+  if (s.free_cash_flow != null) {
+    var fcfSig  = lSig('free_cash_flow', s.free_cash_flow);
+    var fcfBody = s.free_cash_flow > 0 ? "Free cash flow is what is left after running the business and investing in it — harder to manipulate than reported earnings. I trust it more than net income. A company swimming in FCF can fund its own growth, buy back shares, pay dividends, and weather downturns without borrowing. That is a strong position." :
+                                         "Free cash flow is negative — the company is spending more than it earns. For a young, high-growth company investing heavily, this can make sense. For a mature business, it is a warning sign. I want to know where the money is going.";
+    lynchCards += lCard(fcfSig, 'Free Cash Flow', fmtBil(s.free_cash_flow) + '/yr', fcfBody);
+  }
+
+  if (s.debt_to_equity != null) {
+    var dteSig  = lSig('debt_to_equity', s.debt_to_equity);
+    var dteBody = s.debt_to_equity < 0.3 ? "This is how much the company has borrowed relative to shareholder equity. Under 0.3 is a fortress balance sheet — this company can survive almost any downturn without financial stress. I sleep well owning businesses like this." :
+                  s.debt_to_equity < 1.0 ? "This is how much the company has borrowed relative to shareholder equity. Modest debt — manageable, especially for a company generating strong cash flow. Not a concern in normal conditions, but watch it if the business hits a rough patch." :
+                  s.debt_to_equity < 2.0 ? "This is how much the company has borrowed relative to shareholder equity. Meaningful leverage. Fine in good times, but debt amplifies problems in bad ones. I want to make sure cash flow is more than sufficient to cover interest payments." :
+                                           "This is how much the company has borrowed relative to shareholder equity. High leverage makes me nervous. Debt is the enemy when earnings disappoint. A recession could turn a challenging situation into a crisis. Tread carefully.";
+    lynchCards += lCard(dteSig, 'Debt / Equity', Number(s.debt_to_equity).toFixed(2) + 'x', dteBody);
+  }
+
+  if (s.return_on_equity != null) {
+    var roeSig  = lSig('return_on_equity', s.return_on_equity);
+    var roeBody = s.return_on_equity > 0.20 ? "ROE measures how much profit the business generates from the money shareholders have put in. Above 20% is excellent — it means the company has real advantages and management knows how to deploy capital. These are the businesses that compound wealth over decades." :
+                  s.return_on_equity > 0.10 ? "ROE measures how much profit the business generates from the money shareholders have put in. Above 10% is solid — management is using capital reasonably well. It is not exceptional, but it is respectable. Look at the trend: is it improving?" :
+                                               "ROE measures how much profit the business generates from the money shareholders have put in. Below 10% suggests the business is either in a tough industry, carrying too much equity, or management is not deploying capital effectively. Worth investigating.";
+    lynchCards += lCard(roeSig, 'Return on Equity', (s.return_on_equity * 100).toFixed(1) + '%', roeBody);
+  }
+
+  var lynchNoteHtml = '<div class="lynch-note">' +
+    (s.peter_summary ? '<p class="lynch-intro">' + jEsc(s.peter_summary) + '</p>' : '') +
+    '<div class="lynch-cards">' + lynchCards + '</div>' +
+    '</div>';
 
   // Section 4: The Verdict
   var actionText = v.action || '—';
@@ -1411,9 +1636,15 @@ function buildPanelHTML(s) {
       '</section>' +
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">Peter Lynch <span class="panel-tally">' +
-          Number(s.peter_score || 0).toFixed(1) + '/10</span></h3>' +
-        '<div class="peter-bars">' + peterBarsHtml + '</div>' +
-        kmHtml +
+          Number(s.peter_score || 0).toFixed(1) + '/10</span>' +
+          '<button class="peter-toggle-btn" onclick="togglePeterView(this)">📊 Expert</button>' +
+        '</h3>' +
+        '<div class="peter-expert-view">' +
+          kfHtml +
+        '</div>' +
+        '<div class="peter-simple-view hidden">' +
+          lynchNoteHtml +
+        '</div>' +
       '</section>' +
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">The Verdict</h3>' +
@@ -1422,6 +1653,21 @@ function buildPanelHTML(s) {
       '</section>' +
     '</div>'
   );
+}
+
+function togglePeterView(btn) {
+  var section = btn.closest('.panel-section');
+  var expert  = section.querySelector('.peter-expert-view');
+  var simple  = section.querySelector('.peter-simple-view');
+  if (!expert.classList.contains('hidden')) {
+    expert.classList.add('hidden');
+    simple.classList.remove('hidden');
+    btn.textContent = "✍️ Lynch's Take";
+  } else {
+    simple.classList.add('hidden');
+    expert.classList.remove('hidden');
+    btn.textContent = '📊 Expert';
+  }
 }
 
 // ── Sparklines ────────────────────────────────────────────────────────────────
@@ -1710,6 +1956,16 @@ def build_report(portfolio_results, suggestions, newspaper_text,
             "buy_zone":            r.get("buy_zone"),
             "buy_zone_narrative":  r.get("buy_zone_narrative") or "",
             "price_levels":        pl,
+            "pe_ratio":            r.get("pe_ratio"),
+            "forward_pe":          r.get("forward_pe"),
+            "peg_ratio":           r.get("peg_ratio"),
+            "revenue_growth":      r.get("revenue_growth"),
+            "earnings_growth":     r.get("earnings_growth"),
+            "profit_margin":       r.get("profit_margin"),
+            "debt_to_equity":      r.get("debt_to_equity"),
+            "free_cash_flow":      r.get("free_cash_flow"),
+            "return_on_equity":    r.get("return_on_equity"),
+            "market_cap":          r.get("market_cap"),
             "sparkline":           _sparkline_points(r),
             "domain":              TICKER_DOMAIN.get(ticker.upper(), ""),
         })
@@ -1730,7 +1986,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
   <title>The Wire &#8212; {_esc(date_long)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>{_css()}</style>
 </head>
@@ -1895,6 +2151,10 @@ if __name__ == "__main__":
             "prior_3m_low": 161.00, "week_52_low": 158.25,
             "golden_cross_days_ago": 42,
         },
+        "pe_ratio": 28.5, "forward_pe": 24.2, "peg_ratio": 2.1,
+        "revenue_growth": 0.05, "earnings_growth": 0.08, "profit_margin": 0.263,
+        "debt_to_equity": 1.77, "free_cash_flow": 108_000_000_000,
+        "return_on_equity": 1.47, "market_cap": 2_900_000_000_000,
     }
 
     _demo_suggest = {
@@ -1943,6 +2203,10 @@ if __name__ == "__main__":
             "prior_3m_low": 750.00, "week_52_low": 495.00,
             "golden_cross_days_ago": 110,
         },
+        "pe_ratio": 55.2, "forward_pe": 38.1, "peg_ratio": 0.8,
+        "revenue_growth": 1.22, "earnings_growth": 1.68, "profit_margin": 0.557,
+        "debt_to_equity": 0.41, "free_cash_flow": 60_400_000_000,
+        "return_on_equity": 1.23, "market_cap": 2_800_000_000_000,
     }
 
     _newspaper = """MARKET OVERVIEW
