@@ -389,8 +389,34 @@ Respond ONLY with valid JSON in this format:
 
 
 
+def _get_market_snapshot():
+    """Fetch latest close and daily change for S&P 500, NASDAQ, and Dow."""
+    import yfinance as yf
+    indices = {"S&P 500": "^GSPC", "NASDAQ": "^IXIC", "Dow Jones": "^DJI"}
+    lines = []
+    for label, symbol in indices.items():
+        try:
+            hist = yf.Ticker(symbol).history(period="5d")
+            hist = hist.dropna(subset=["Close"])
+            if len(hist) >= 2:
+                prev_close = hist["Close"].iloc[-2]
+                last_close = hist["Close"].iloc[-1]
+                chg = last_close - prev_close
+                pct = (chg / prev_close) * 100
+                sign = "+" if chg >= 0 else ""
+                lines.append(f"{label}: {last_close:,.2f} ({sign}{pct:.2f}%)")
+        except Exception:
+            pass
+    return "\n".join(lines) if lines else "Market data unavailable."
+
+
 def write_newspaper(portfolio_results, suggestions):
     """Turn all analysis results into a readable daily newspaper."""
+    from datetime import datetime
+    today = datetime.now()
+    date_str = today.strftime("%A, %B %d, %Y")
+
+    market_snapshot = _get_market_snapshot()
 
     # build a compact data summary for the AI to write from
     lines = ["PORTFOLIO:"]
@@ -415,21 +441,28 @@ def write_newspaper(portfolio_results, suggestions):
     data_summary = "\n".join(lines)
 
     prompt = f"""You are writing a daily stock newspaper for an investor.
-Below is today's analysis data. Write a clear, engaging daily briefing.
+Today is {date_str}.
 
-Structure it as:
-1. A short market-tone opening (1-2 sentences on the overall portfolio picture)
-2. PORTFOLIO section: a brief note on each holding - its technical/fundamental
+Start with a 2-3 sentence market opening that mentions today's day of the week and
+references the real index moves below. Be specific — mention the actual numbers.
+Then cover the portfolio and suggestions as described.
+
+MARKET SNAPSHOT (use these exact numbers, do not invent others):
+{market_snapshot}
+
+Structure:
+1. Market opening — mention the day, the index moves, and the overall tone.
+2. PORTFOLIO section: a brief note on each holding — its technical/fundamental
    standing and what to do. Group similar situations if helpful.
 3. SUGGESTIONS section: present the diversifier ideas and why they'd strengthen
    a tech-heavy portfolio.
 4. A one-line bottom-line takeaway.
 
-Keep it concise and readable - this is a daily brief, not an essay. Use the real
-scores and actions. Do not invent any numbers beyond what's given.
+Keep it concise and readable — daily brief, not an essay. Use the real scores
+and actions. Do not invent any numbers beyond what is given above.
 End with a brief reminder that this is analysis, not financial advice.
 
-DATA:
+PORTFOLIO DATA:
 {data_summary}"""
 
     response = client.chat.completions.create(

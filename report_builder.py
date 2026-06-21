@@ -244,8 +244,27 @@ def _stock_card(r):
     peter = peter_raw if peter_raw is not None else 0
     peter_display = f"{peter:.1f}" if peter_raw is not None else "—"
     short_t = verdict.get("short_term") or ""
-    snippet = (short_t[:110] + "…") if len(short_t) > 110 else short_t
+    snippet = (short_t[:160] + "…") if len(short_t) > 160 else short_t
     sector = r.get("sector", "")
+    pe = r.get("pe_ratio")
+    rev_g = r.get("revenue_growth")
+    margin = r.get("profit_margin")
+    buy_zone = r.get("buy_zone")
+    stats_parts = []
+    if pe is not None:
+        stats_parts.append(f"P/E {pe:.1f}x")
+    if rev_g is not None:
+        stats_parts.append(f"Rev {'+' if rev_g >= 0 else ''}{rev_g*100:.0f}%")
+    if margin is not None:
+        stats_parts.append(f"Margin {margin*100:.0f}%")
+    stats_html = "".join(f'<span class="stat-item">{_esc(s)}</span>' for s in stats_parts[:3])
+    stats_block = f'<div class="card-stats">{stats_html}</div>' if stats_html else ""
+    buy_html = ""
+    if buy_zone:
+        bz_low = buy_zone.get("low")
+        bz_high = buy_zone.get("high")
+        if bz_low and bz_high:
+            buy_html = f'<span class="buy-zone-badge">Buy ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
     return (
         f'<article class="card card--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
         f'role="button" tabindex="0">'
@@ -259,21 +278,24 @@ def _stock_card(r):
         f'</div>'
         f'<div class="card-price">{_price_line(r.get("price_levels"))}</div>'
         f'<canvas id="spark-{_esc(ticker)}" class="sparkline" width="300" height="52"></canvas>'
+        f'<div class="card-divider"></div>'
         f'<div class="card-bars">'
-        f'<div class="score-row"><span class="score-label">TECH</span>'
+        f'<div class="score-row"><span class="score-label">MICHA</span>'
         f'<div class="score-track"><div class="score-fill score-fill--tech" style="width:{_bar(micha,12)}%"></div></div>'
         f'<span class="score-val">{micha}/12</span></div>'
-        f'<div class="score-row"><span class="score-label">FUND</span>'
+        f'<div class="score-row"><span class="score-label">PETER</span>'
         f'<div class="score-track"><div class="score-fill score-fill--fund" style="width:{_bar(peter,10)}%"></div></div>'
         f'<span class="score-val">{peter_display}/10</span></div>'
         f'</div>'
+        f'{stats_block}'
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
         f'<span class="card-sector">{_esc(sector)}</span>'
         f'{_sector_rs_html(r)}'
+        f'{buy_html}'
         f'</div>'
         f'<p class="card-oneliner">{_esc(snippet)}</p>'
-        f'<span class="card-cta">Read full report &#8594;</span>'
+        f'<span class="card-cta">Open full analysis &#8594;</span>'
         f'</article>'
     )
 
@@ -291,8 +313,20 @@ def _suggestion_card(r):
     peter = peter_raw if peter_raw is not None else 0
     peter_display = f"{peter:.1f}" if peter_raw is not None else "—"
     short_t = verdict.get("short_term") or ""
-    snippet = (short_t[:90] + "…") if len(short_t) > 90 else short_t
+    snippet = (short_t[:140] + "…") if len(short_t) > 140 else short_t
     sector = r.get("sector", "")
+    pe = r.get("pe_ratio")
+    rev_g = r.get("revenue_growth")
+    margin = r.get("profit_margin")
+    stats_parts = []
+    if pe is not None:
+        stats_parts.append(f"P/E {pe:.1f}x")
+    if rev_g is not None:
+        stats_parts.append(f"Rev {'+' if rev_g >= 0 else ''}{rev_g*100:.0f}%")
+    if margin is not None:
+        stats_parts.append(f"Margin {margin*100:.0f}%")
+    stats_html = "".join(f'<span class="stat-item">{_esc(s)}</span>' for s in stats_parts[:3])
+    stats_block = f'<div class="card-stats">{stats_html}</div>' if stats_html else ""
     return (
         f'<article class="sug-card card--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
         f'role="button" tabindex="0">'
@@ -305,20 +339,23 @@ def _suggestion_card(r):
         f'<span class="action-tag action-tag--{cls}">{_esc(action_word)}</span>'
         f'</div>'
         f'<div class="card-price">{_price_line(r.get("price_levels"))}</div>'
+        f'<div class="card-divider"></div>'
         f'<div class="card-bars">'
-        f'<div class="score-row"><span class="score-label">TECH</span>'
+        f'<div class="score-row"><span class="score-label">MICHA</span>'
         f'<div class="score-track"><div class="score-fill score-fill--tech" style="width:{_bar(micha,12)}%"></div></div>'
         f'<span class="score-val">{micha}/12</span></div>'
-        f'<div class="score-row"><span class="score-label">FUND</span>'
+        f'<div class="score-row"><span class="score-label">PETER</span>'
         f'<div class="score-track"><div class="score-fill score-fill--fund" style="width:{_bar(peter,10)}%"></div></div>'
         f'<span class="score-val">{peter_display}/10</span></div>'
         f'</div>'
+        f'{stats_block}'
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
         f'<span class="card-sector">{_esc(sector)}</span>'
         f'{_sector_rs_html(r)}'
         f'</div>'
         f'<p class="card-oneliner">{_esc(snippet)}</p>'
+        f'<span class="card-cta">Open full analysis &#8594;</span>'
         f'</article>'
     )
 
@@ -639,7 +676,7 @@ body {
   color: var(--ink-dim);
   quotes: none;
 }
-.briefing-sidebar { position: sticky; top: 1rem; }
+.briefing-sidebar { }
 .dispatch-duck {
   border: 3px solid var(--rule);
   overflow: hidden;
@@ -815,15 +852,17 @@ body {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.6rem;
   color: var(--ink-dim);
-  width: 2.8rem;
+  width: 3.5rem;
   flex-shrink: 0;
   letter-spacing: 0.04em;
 }
 .score-track {
   flex: 1;
-  height: 5px;
+  height: 8px;
   background: rgba(0,0,0,0.1);
   position: relative;
+  border-radius: 2px;
+  overflow: hidden;
 }
 [data-theme="dark"] .score-track { background: rgba(255,255,255,0.1); }
 .score-fill {
@@ -876,12 +915,45 @@ body {
 }
 .sector-rs--up   { color: var(--go);      background: color-mix(in srgb, var(--go)   14%, transparent); }
 .sector-rs--down { color: var(--stop);    background: color-mix(in srgb, var(--stop) 14%, transparent); }
-.card-oneliner {
-  font-size: 0.83rem;
+.card-divider {
+  height: 1px;
+  background: var(--rule);
+  opacity: 0.12;
+  margin: 0.55rem 0 0.6rem;
+}
+.card-stats {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.stat-item {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.57rem;
   color: var(--ink-dim);
-  line-height: 1.45;
-  font-style: italic;
+  background: rgba(0,0,0,0.06);
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  letter-spacing: 0.03em;
+}
+[data-theme="dark"] .stat-item { background: rgba(255,255,255,0.07); }
+.buy-zone-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.57rem;
+  color: var(--go);
+  border: 1px solid var(--go);
+  padding: 0.08rem 0.35rem;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+.card-oneliner {
+  font-size: 0.84rem;
+  color: var(--ink);
+  line-height: 1.5;
   margin-bottom: 0.4rem;
+  padding-left: 0.65rem;
+  border-left: 2px solid var(--rule);
+  opacity: 0.75;
 }
 .card-cta {
   font-family: "JetBrains Mono", monospace;
