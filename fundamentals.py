@@ -1,8 +1,12 @@
 import yfinance as yf
+import requests
+
+_session = requests.Session()
+_session.headers.update({"User-Agent": "Mozilla/5.0"})
 
 def get_fundamentals(ticker):
     """Fetch key fundamental data points for a stock."""
-    stock = yf.Ticker(ticker)
+    stock = yf.Ticker(ticker, session=_session)
     info = stock.info
 
     # pull the fields we care about (with safe defaults if missing)
@@ -26,6 +30,7 @@ def get_fundamentals(ticker):
 
 # --- test it ---
 if __name__ == "__main__":
+    import truststore; truststore.inject_into_ssl()
     for ticker in ["AAPL", "MSFT", "TSM", "ASML"]:
         print(f"\n=== {ticker} ===")
         f = get_fundamentals(ticker)

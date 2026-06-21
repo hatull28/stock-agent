@@ -1,3 +1,8 @@
+import sys, truststore
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+truststore.inject_into_ssl()
+
 from data import get_price_history
 from fundamentals import get_fundamentals
 from config import PORTFOLIO, BENCHMARK

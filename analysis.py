@@ -127,7 +127,7 @@ def compute_price_levels(data):
     recent_3m_low  = float(close.iloc[-63:].min())
     recent_3m_high = float(close.iloc[-63:].max())
     prior_3m_low   = float(close.iloc[-126:-63].min())
-    week_52_low = float(close.iloc[-252:].min()) if len(close) >= 252 else None
+    week_52_low = float(close.iloc[-252:].min()) if len(close) >= 245 else None
 
     # day-over-day price change
     price_change     = float(close.iloc[-1] - close.iloc[-2])

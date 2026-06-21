@@ -342,7 +342,7 @@ def analyze_cycle_and_zones(ticker, cycle_stage, price_levels, buy_zone, criteri
 - SMA50: ${price_levels['sma50']:.2f} (price is {price_levels['price_vs_sma50_pct']:+.1f}% vs SMA50)
 - SMA150: ${price_levels['sma150']:.2f} (price is {price_levels['price_vs_sma150_pct']:+.1f}% vs SMA150)
 - Recent 3-month low (support floor): ${price_levels['recent_3m_low']:.2f}
-- 52-week low: ${price_levels['week_52_low']:.2f}
+- 52-week low: {f"${price_levels['week_52_low']:.2f}" if price_levels['week_52_low'] is not None else "N/A (insufficient history)"}
 - Golden cross occurred: {cross_str}
 - Higher highs & higher lows: {criteria.get("11_higher_highs_lows", False)}
 - Code-computed cycle stage: {cycle_stage}
