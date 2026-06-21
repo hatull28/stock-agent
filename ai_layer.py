@@ -164,7 +164,7 @@ Respond ONLY with valid JSON in exactly this format:
     "industry": <1-10>,
     "long_term_compounding": <1-10>
   }},
-  "summary": "2-3 sentence long-term fundamental assessment"
+  "summary": "2-3 sentence long-term fundamental assessment based only on the data above. Do NOT claim the company has a strong moat, excellent management, or dominant industry position — those criteria have no data backing. Stick to what the numbers show."
 }}"""
 
     response = client.chat.completions.create(
@@ -286,6 +286,46 @@ Respond ONLY with valid JSON in this format:
     elif micha_score <= 4 and parsed.get("action") == "BUY NOW":
         parsed["action"] = "ACCUMULATE"
         print(f"  NOTE: Micha {micha_score}/12 ≤ 4 — downgrading BUY NOW to ACCUMULATE for {ticker}")
+
+    # Contradiction check: action and short_term must point the same direction
+    _bullish_action = parsed.get("action") in ("BUY NOW", "ACCUMULATE")
+    _bearish_words  = ("wait", "pullback", "caution", "weakness", "avoid", "deteriorat", "concern")
+    _bullish_words  = ("buy", "accumulate", "opportunit", "strong", "upside")
+    _short = (parsed.get("short_term") or "").lower()
+    _contradiction = (
+        (_bullish_action and any(w in _short for w in _bearish_words)) or
+        (not _bullish_action and all(w not in _short for w in _bearish_words) and
+         any(w in _short for w in _bullish_words))
+    )
+    if _contradiction:
+        print(f"  NOTE: action/short_term contradiction detected for {ticker} — retrying once")
+        _fix_prompt = (
+            f"Your previous response had action='{parsed['action']}' but short_term contained "
+            f"contradictory language. Rewrite ONLY the short_term field so it is consistent "
+            f"with action='{parsed['action']}'. Return ONLY valid JSON with all 6 original "
+            f"fields, keeping everything else identical except short_term."
+        )
+        try:
+            _retry = client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "user",      "content": prompt},
+                    {"role": "assistant", "content": raw},
+                    {"role": "user",      "content": _fix_prompt},
+                ],
+                max_tokens=600,
+                temperature=0,
+            )
+            _retry_raw = _retry.choices[0].message.content.strip()
+            if _retry_raw.startswith("```"):
+                _retry_raw = _retry_raw.split("```")[1]
+                if _retry_raw.startswith("json"):
+                    _retry_raw = _retry_raw[4:]
+                _retry_raw = _retry_raw.strip()
+            _retry_parsed = json.loads(_retry_raw)
+            parsed["short_term"] = _retry_parsed.get("short_term", parsed["short_term"])
+        except Exception as e:
+            print(f"  WARNING: contradiction retry failed for {ticker}: {e}")
 
     return parsed
 

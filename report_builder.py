@@ -2074,6 +2074,7 @@ function buildPanelHTML(s) {
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">Peter Lynch <span class="panel-tally">' +
           Number(s.peter_score || 0).toFixed(1) + '/10</span>' +
+          '<span class="panel-tally" style="opacity:0.5;margin-left:0.4rem" title="Moat, Management, Industry and Net Income Trend are estimated — no specific data available for those criteria">moat/mgmt/industry estimated</span>' +
           '<button class="peter-toggle-btn" onclick="togglePeterView(this)">📊 Expert</button>' +
         '</h3>' +
         '<div class="peter-expert-view">' +
