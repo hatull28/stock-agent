@@ -1,5 +1,24 @@
 import pandas as pd
 
+SECTOR_ETF = {
+    "Technology":             "XLK",
+    "Communication Services": "XLC",
+    "Consumer Cyclical":      "XLY",
+    "Consumer Defensive":     "XLP",
+    "Healthcare":             "XLV",
+    "Financial Services":     "XLF",
+    "Financials":             "XLF",
+    "Energy":                 "XLE",
+    "Industrials":            "XLI",
+    "Basic Materials":        "XLB",
+    "Real Estate":            "XLRE",
+    "Utilities":              "XLU",
+    "Semiconductors":         "SOXX",
+}
+
+# Cache ETF price histories within a single run to avoid duplicate fetches
+_etf_cache = {}
+
 def micha_criteria_1_to_5(data):
     """Compute Micha Method criteria 1-5 from price history.
     Returns a dict of PASS/FAIL results."""
@@ -246,6 +265,25 @@ def analyze_stock(ticker, benchmark_data):
     cycle_info   = analyze_cycle_and_zones(ticker, cycle_stage, price_levels, buy_zone, micha["criteria"]) \
                    if buy_zone else {}
 
+    # Part 5: sector relative strength vs sector ETF (6-month window)
+    sector       = fundamentals.get("sector", "")
+    etf_ticker   = SECTOR_ETF.get(sector)
+    sector_etf   = None
+    sector_vs_etf = None
+    if etf_ticker:
+        try:
+            if etf_ticker not in _etf_cache:
+                _etf_cache[etf_ticker] = get_price_history(etf_ticker)
+            etf_data = _etf_cache[etf_ticker]
+            window = min(126, len(data["Close"]) - 1, len(etf_data["Close"]) - 1)
+            if window > 10:
+                stock_ret = (data["Close"].iloc[-1] / data["Close"].iloc[-window]) - 1
+                etf_ret   = (etf_data["Close"].iloc[-1] / etf_data["Close"].iloc[-window]) - 1
+                sector_vs_etf = float(stock_ret - etf_ret)
+                sector_etf    = etf_ticker
+        except Exception as e:
+            print(f"  Sector ETF fetch skipped for {ticker} ({etf_ticker}): {e}")
+
     return {
         "ticker": ticker,
         "name": fundamentals.get("name", ticker),
@@ -272,4 +310,6 @@ def analyze_stock(ticker, benchmark_data):
         "free_cash_flow":        fundamentals.get("free_cash_flow"),
         "return_on_equity":      fundamentals.get("return_on_equity"),
         "market_cap":            fundamentals.get("market_cap"),
+        "sector_etf":            sector_etf,
+        "sector_vs_etf":         sector_vs_etf,
     }

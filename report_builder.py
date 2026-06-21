@@ -46,6 +46,18 @@ def _cycle_class(stage):
     )
 
 
+def _sector_rs_html(r):
+    etf = r.get("sector_etf")
+    vs  = r.get("sector_vs_etf")
+    if etf is None or vs is None:
+        return ""
+    sign = "+" if vs >= 0 else ""
+    cls  = "up" if vs >= 0 else "down"
+    arrow = "▲" if vs >= 0 else "▼"
+    return (f'<span class="sector-rs sector-rs--{cls}">'
+            f'vs {_esc(etf)} {sign}{vs*100:.1f}% {arrow}</span>')
+
+
 def _bar(score, out_of):
     if score is None or out_of == 0:
         return 0
@@ -224,6 +236,7 @@ def _stock_card(r):
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
         f'<span class="card-sector">{_esc(sector)}</span>'
+        f'{_sector_rs_html(r)}'
         f'</div>'
         f'<p class="card-oneliner">{_esc(snippet)}</p>'
         f'<span class="card-cta">Read full report &#8594;</span>'
@@ -269,6 +282,7 @@ def _suggestion_card(r):
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
         f'<span class="card-sector">{_esc(sector)}</span>'
+        f'{_sector_rs_html(r)}'
         f'</div>'
         f'<p class="card-oneliner">{_esc(snippet)}</p>'
         f'</article>'
@@ -739,6 +753,16 @@ body {
   font-size: 0.6rem;
   color: var(--ink-dim);
 }
+.sector-rs {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.57rem;
+  font-weight: 600;
+  padding: 0.08rem 0.35rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.sector-rs--up   { color: var(--go);      background: color-mix(in srgb, var(--go)   14%, transparent); }
+.sector-rs--down { color: var(--stop);    background: color-mix(in srgb, var(--stop) 14%, transparent); }
 .card-oneliner {
   font-size: 0.83rem;
   color: var(--ink-dim);
@@ -806,7 +830,9 @@ body {
   height: 100vh;
   width: 500px;
   max-width: 100vw;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--paper);
   border-left: 4px solid var(--rule);
   transform: translateX(105%);
@@ -814,6 +840,7 @@ body {
   z-index: 200;
 }
 .detail-panel--open { transform: translateX(0); }
+.panel-scroll { flex: 1 1 0; overflow-y: auto; min-height: 0; }
 .panel-content { padding-bottom: 3rem; }
 
 .panel-close {
@@ -1184,6 +1211,120 @@ body {
   margin: 0;
 }
 [data-theme="dark"] .lynch-metric-body { color: #b8a880; }
+.lynch-highlight {
+  background: linear-gradient(
+    104deg,
+    transparent 0.9%, rgba(255,230,0,0.22) 2.4%,
+    rgba(255,230,0,0.55) 5%, rgba(255,230,0,0.55) 93%,
+    rgba(255,230,0,0.22) 96%, transparent 97.9%
+  );
+  padding: 0 0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.lynch-peers {
+  font-family: "Caveat", cursive;
+  font-size: 0.9rem;
+  color: #7a6840;
+  margin-top: 0.35rem;
+  padding-top: 0.28rem;
+  border-top: 1px dashed #d4c9a0;
+  line-height: 1.45;
+}
+[data-theme="dark"] .lynch-peers { color: #a89060; border-top-color: #5a5030; }
+.lp-name { font-weight: 700; font-family: "Caveat", cursive; }
+.lp-avg  { font-style: italic; color: #a08050; }
+[data-theme="dark"] .lp-avg { color: #c8a860; }
+/* ── Lynch category tab (fixed, outside panel, never clipped) ─────────────── */
+.lynch-tab {
+  position: fixed;
+  top: 5rem;
+  right: 500px;
+  z-index: 210;
+  display: none;
+}
+.lynch-tab--open { display: block; }
+.lynch-tab-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fffbe6;
+  border: 2px solid #e8d870;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  padding: 0.7rem 0.7rem 0.5rem;
+  box-shadow: -4px 3px 14px rgba(0,0,0,0.2);
+  cursor: pointer;
+  min-width: 3.8rem;
+  transition: background 0.15s;
+}
+.lynch-tab-current:hover { background: #fff8d0; }
+.lynch-tab-emoji { font-size: 2.2rem; line-height: 1; }
+.lynch-tab-label {
+  font-family: "Caveat", cursive;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #7a6010;
+  text-align: center;
+  margin-top: 0.2rem;
+  white-space: nowrap;
+}
+.lynch-tab-hint {
+  font-family: "Caveat", cursive;
+  font-size: 0.68rem;
+  color: #b09040;
+  margin-top: 0.3rem;
+}
+.lynch-tab-all {
+  position: absolute;
+  right: calc(100% + 0.6rem);
+  top: 0;
+  display: none;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  padding: 0.5rem 0.4rem;
+  box-shadow: -6px 6px 22px rgba(0,0,0,0.18);
+  min-width: 13rem;
+  z-index: 220;
+}
+.lynch-tab-all--open { display: flex; }
+.lynch-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid transparent;
+}
+.lynch-option--active {
+  background: rgba(255,230,0,0.3);
+  border-color: #e8d870;
+}
+.lynch-option-emoji { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+.lynch-option-label {
+  font-family: "Caveat", cursive;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.15;
+  display: block;
+}
+.lynch-option-desc {
+  font-family: "Caveat", cursive;
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+  line-height: 1.2;
+  display: block;
+}
+[data-theme="dark"] .lynch-tab-current { background: #2e2a10; border-color: #7a6830; }
+[data-theme="dark"] .lynch-tab-current:hover { background: #3a3418; }
+[data-theme="dark"] .lynch-tab-label { color: #c8a830; }
+[data-theme="dark"] .lynch-tab-hint { color: #907830; }
+[data-theme="dark"] .lynch-option--active { background: rgba(255,200,0,0.12); border-color: #7a6830; }
+@media (max-width: 600px) { .lynch-tab { display: none !important; } }
 
 /* ── Panel: The Verdict ────────────────────────────────────────────────────── */
 .verdict-action {
@@ -1287,11 +1428,40 @@ function toggleTheme() {
   } catch(e) {}
 })();
 
+// ── Lynch category definitions ────────────────────────────────────────────────
+var LYNCH_CATS = [
+  { emoji: '💎', label: 'Hidden Gem',      desc: 'PEG < 0.8 & positive growth' },
+  { emoji: '🚀', label: 'Ultra Grower',    desc: 'Revenue or earnings > 30% YoY' },
+  { emoji: '🐇', label: 'Fast Grower',     desc: 'Revenue growing > 15%' },
+  { emoji: '🦁', label: 'Stalwart',        desc: 'Steady large-cap, > 5% growth' },
+  { emoji: '🐢', label: 'Slow Grower',     desc: 'Low or flat revenue growth' },
+  { emoji: '🦅', label: 'Turnaround?',     desc: 'Declining revenue, healthy FCF' },
+  { emoji: '🐻', label: 'Tread Carefully', desc: 'Shrinking revenue & weak cash' },
+];
+
 // ── Panel ─────────────────────────────────────────────────────────────────────
 function openPanel(ticker) {
   var s = STOCK_MAP[ticker];
   if (!s) return;
   document.getElementById('panelContent').innerHTML = buildPanelHTML(s);
+  // populate the fixed lynch tab
+  var sticker = lynchSticker(s);
+  var tab = document.getElementById('lynchTab');
+  if (sticker) {
+    document.getElementById('lynchTabEmoji').textContent = sticker.emoji;
+    document.getElementById('lynchTabLabel').textContent = sticker.label;
+    var allHtml = LYNCH_CATS.map(function(cat) {
+      var active = cat.label === sticker.label ? ' lynch-option--active' : '';
+      return '<div class="lynch-option' + active + '">' +
+        '<span class="lynch-option-emoji">' + cat.emoji + '</span>' +
+        '<span><span class="lynch-option-label">' + jEsc(cat.label) + '</span>' +
+        '<span class="lynch-option-desc">' + jEsc(cat.desc) + '</span></span></div>';
+    }).join('');
+    document.getElementById('lynchTabAll').innerHTML = allHtml;
+    tab.classList.add('lynch-tab--open');
+  } else {
+    tab.classList.remove('lynch-tab--open');
+  }
   document.getElementById('detailPanel').classList.add('detail-panel--open');
   document.getElementById('overlay').classList.add('panel-overlay--visible');
   document.body.style.overflow = 'hidden';
@@ -1300,7 +1470,13 @@ function openPanel(ticker) {
 function closePanel() {
   document.getElementById('detailPanel').classList.remove('detail-panel--open');
   document.getElementById('overlay').classList.remove('panel-overlay--visible');
+  document.getElementById('lynchTab').classList.remove('lynch-tab--open');
+  document.getElementById('lynchTabAll').classList.remove('lynch-tab-all--open');
   document.body.style.overflow = '';
+}
+
+function toggleLynchOptions() {
+  document.getElementById('lynchTabAll').classList.toggle('lynch-tab-all--open');
 }
 
 document.addEventListener('keydown', function(e) {
@@ -1377,6 +1553,18 @@ function actionClass(action) {
 function cycleClass(stage) {
   var m = {EARLY:'early', MID:'mid', LATE:'late'};
   return m[(stage||'').toUpperCase()] || 'none';
+}
+
+function lynchSticker(s) {
+  var rg = s.revenue_growth, eg = s.earnings_growth;
+  var mc = s.market_cap, peg = s.peg_ratio, fcf = s.free_cash_flow;
+  if (peg != null && peg < 0.8 && rg != null && rg > 0) return { emoji: '💎', label: 'Hidden Gem' };
+  if ((rg != null && rg > 0.30) || (eg != null && eg > 0.30)) return { emoji: '🚀', label: 'Ultra Grower' };
+  if (rg != null && rg > 0.15) return { emoji: '🐇', label: 'Fast Grower' };
+  if (rg != null && rg > 0.05 && mc != null && mc > 50e9) return { emoji: '🦁', label: 'Stalwart' };
+  if (rg != null && rg >= 0) return { emoji: '🐢', label: 'Slow Grower' };
+  if (fcf != null && fcf > 0) return { emoji: '🦅', label: 'Turnaround?' };
+  return { emoji: '🐻', label: 'Tread Carefully' };
 }
 
 function buildPanelHTML(s) {
@@ -1498,15 +1686,30 @@ function buildPanelHTML(s) {
     if (metric === 'return_on_equity') return v > 0.20 ? 'green' : v > 0.10 ? 'amber' : 'red';
     return 'amber';
   }
-  function lCard(sig, label, valStr, body) {
+  function lCard(sig, label, valStr, body, peersHtml) {
+    var hl = sig === 'green' ? ' class="lynch-highlight"' : '';
     return '<div class="lynch-metric lynch-metric--' + sig + '">' +
       '<div class="lynch-metric-head">' +
         '<span class="lynch-dot lynch-dot--' + sig + '"></span>' +
         '<span class="lynch-metric-label">' + jEsc(label) + '</span>' +
-        '<span class="lynch-metric-num">' + jEsc(valStr) + '</span>' +
+        '<span' + hl + '><span class="lynch-metric-num">' + jEsc(valStr) + '</span></span>' +
       '</div>' +
       '<p class="lynch-metric-body">' + jEsc(body) + '</p>' +
+      (peersHtml || '') +
       '</div>';
+  }
+  function peerLine(field, formatter) {
+    var peers = STOCKS.filter(function(p) {
+      return p.sector === s.sector && p.ticker !== s.ticker && p[field] != null;
+    });
+    if (!peers.length) return '';
+    peers.sort(function(a, b) { return (b.market_cap || 0) - (a.market_cap || 0); });
+    var avg = peers.reduce(function(sum, p) { return sum + p[field]; }, 0) / peers.length;
+    var labels = peers.slice(0, 4).map(function(p) {
+      return '<span class="lp-name">' + jEsc(p.ticker) + '</span> ' + jEsc(formatter(p[field]));
+    }).join(' &nbsp;·&nbsp; ');
+    return '<div class="lynch-peers">' + labels +
+      ' &nbsp;·&nbsp; <span class="lp-avg">sector avg ' + jEsc(formatter(avg)) + '</span></div>';
   }
 
   var lynchCards = '';
@@ -1517,7 +1720,7 @@ function buildPanelHTML(s) {
                  s.pe_ratio < 25 ? "The P/E is how many years of today's earnings you are paying for. Under 25 is reasonable for a steady grower — not a screaming bargain, but not reckless either." :
                  s.pe_ratio < 40 ? "The P/E is how many years of today's earnings you are paying for. You are paying up here. That is fine as long as earnings growth keeps accelerating — but it leaves no margin for error." :
                                    "The P/E is how many years of today's earnings you are paying for. This is expensive. You need extraordinary growth to justify it. One missed quarter and the stock can fall hard.";
-    lynchCards += lCard(peSig, 'P/E Ratio', Number(s.pe_ratio).toFixed(1) + 'x', peBody);
+    lynchCards += lCard(peSig, 'P/E Ratio', Number(s.pe_ratio).toFixed(1) + 'x', peBody, peerLine('pe_ratio', fmtRatio));
   }
 
   if (s.peg_ratio != null) {
@@ -1526,7 +1729,7 @@ function buildPanelHTML(s) {
                   s.peg_ratio < 1.0 ? "My favorite metric. It divides the P/E by the earnings growth rate. Below 1 is the sweet spot — you are getting growth at a reasonable price. This is where I like to buy." :
                   s.peg_ratio < 2.0 ? "My favorite metric. It divides the P/E by the earnings growth rate. A PEG of 1 is fair value. Between 1 and 2 is acceptable for a high-quality business — not a bargain, but not a rip-off." :
                                       "My favorite metric. It divides the P/E by the earnings growth rate. Above 2 means you are paying a meaningful premium for growth. The story had better be very compelling.";
-    lynchCards += lCard(pegSig, 'PEG Ratio', Number(s.peg_ratio).toFixed(2) + 'x', pegBody);
+    lynchCards += lCard(pegSig, 'PEG Ratio', Number(s.peg_ratio).toFixed(2) + 'x', pegBody, peerLine('peg_ratio', fmtRatio));
   }
 
   if (s.revenue_growth != null) {
@@ -1537,7 +1740,7 @@ function buildPanelHTML(s) {
                   s.revenue_growth > 0.10 ? "Revenue is the top line — how fast the business is actually expanding sales. I split companies into slow growers (under 10%), stalwarts (10-20%), and fast growers (above 20%). This is a stalwart — solid, dependable, but not a rocket ship." :
                   s.revenue_growth > 0    ? "Revenue is the top line — how fast the business is actually expanding sales. Under 10% puts this in slow-grower territory. Fine for a dividend stock or a value play, but I would not expect big capital gains without an acceleration." :
                                             "Revenue is the top line — how fast the business is expanding. Revenue is actually shrinking here. I want to understand exactly why before I get involved. Is this a one-time issue or a structural problem?";
-    lynchCards += lCard(revSig, 'Revenue Growth', revVal, revBody);
+    lynchCards += lCard(revSig, 'Revenue Growth', revVal, revBody, peerLine('revenue_growth', fmtPct));
   }
 
   if (s.earnings_growth != null) {
@@ -1548,7 +1751,7 @@ function buildPanelHTML(s) {
                   s.earnings_growth > 0.10 ? "Earnings per share growth is ultimately what drives stock prices over time. 10-20% is solid and consistent. Not exciting, but this is the kind of business that rewards patience." :
                   s.earnings_growth > 0    ? "Earnings per share growth is ultimately what drives stock prices over time. Below 10% is modest. The P/E ratio should reflect that — you should not be paying a growth-stock price for slow earnings growth." :
                                              "Earnings per share growth is ultimately what drives stock prices over time. Earnings are actually falling. This is a yellow flag. Could be temporary, but I need a good explanation before I am comfortable.";
-    lynchCards += lCard(epsSig, 'Earnings Growth', epsVal, epsBody);
+    lynchCards += lCard(epsSig, 'Earnings Growth', epsVal, epsBody, peerLine('earnings_growth', fmtPct));
   }
 
   if (s.profit_margin != null) {
@@ -1558,14 +1761,14 @@ function buildPanelHTML(s) {
                  s.profit_margin > 0.10 ? "For every $100 in revenue, the company keeps $" + (s.profit_margin * 100).toFixed(1) + " as profit. Decent. The business earns a fair share of what it brings in. Watch whether margins are expanding or contracting over time — direction matters as much as level." :
                  s.profit_margin > 0.05 ? "For every $100 in revenue, the company keeps $" + (s.profit_margin * 100).toFixed(1) + " as profit. These are thin margins. One bad quarter — rising costs, a price war, a supply shock — and profits can evaporate. Needs strong volume to make up for it." :
                                           "For every $100 in revenue, the company keeps barely anything as profit. This is a brutally competitive business. Small problems become big ones fast. I would need a very compelling reason to own it at these margins.";
-    lynchCards += lCard(pmSig, 'Profit Margin', pmVal, pmBody);
+    lynchCards += lCard(pmSig, 'Profit Margin', pmVal, pmBody, peerLine('profit_margin', fmtPct));
   }
 
   if (s.free_cash_flow != null) {
     var fcfSig  = lSig('free_cash_flow', s.free_cash_flow);
     var fcfBody = s.free_cash_flow > 0 ? "Free cash flow is what is left after running the business and investing in it — harder to manipulate than reported earnings. I trust it more than net income. A company swimming in FCF can fund its own growth, buy back shares, pay dividends, and weather downturns without borrowing. That is a strong position." :
                                          "Free cash flow is negative — the company is spending more than it earns. For a young, high-growth company investing heavily, this can make sense. For a mature business, it is a warning sign. I want to know where the money is going.";
-    lynchCards += lCard(fcfSig, 'Free Cash Flow', fmtBil(s.free_cash_flow) + '/yr', fcfBody);
+    lynchCards += lCard(fcfSig, 'Free Cash Flow', fmtBil(s.free_cash_flow) + '/yr', fcfBody, peerLine('free_cash_flow', fmtBil));
   }
 
   if (s.debt_to_equity != null) {
@@ -1574,7 +1777,7 @@ function buildPanelHTML(s) {
                   s.debt_to_equity < 1.0 ? "This is how much the company has borrowed relative to shareholder equity. Modest debt — manageable, especially for a company generating strong cash flow. Not a concern in normal conditions, but watch it if the business hits a rough patch." :
                   s.debt_to_equity < 2.0 ? "This is how much the company has borrowed relative to shareholder equity. Meaningful leverage. Fine in good times, but debt amplifies problems in bad ones. I want to make sure cash flow is more than sufficient to cover interest payments." :
                                            "This is how much the company has borrowed relative to shareholder equity. High leverage makes me nervous. Debt is the enemy when earnings disappoint. A recession could turn a challenging situation into a crisis. Tread carefully.";
-    lynchCards += lCard(dteSig, 'Debt / Equity', Number(s.debt_to_equity).toFixed(2) + 'x', dteBody);
+    lynchCards += lCard(dteSig, 'Debt / Equity', Number(s.debt_to_equity).toFixed(2) + 'x', dteBody, peerLine('debt_to_equity', fmtRatio));
   }
 
   if (s.return_on_equity != null) {
@@ -1582,7 +1785,7 @@ function buildPanelHTML(s) {
     var roeBody = s.return_on_equity > 0.20 ? "ROE measures how much profit the business generates from the money shareholders have put in. Above 20% is excellent — it means the company has real advantages and management knows how to deploy capital. These are the businesses that compound wealth over decades." :
                   s.return_on_equity > 0.10 ? "ROE measures how much profit the business generates from the money shareholders have put in. Above 10% is solid — management is using capital reasonably well. It is not exceptional, but it is respectable. Look at the trend: is it improving?" :
                                                "ROE measures how much profit the business generates from the money shareholders have put in. Below 10% suggests the business is either in a tough industry, carrying too much equity, or management is not deploying capital effectively. Worth investigating.";
-    lynchCards += lCard(roeSig, 'Return on Equity', (s.return_on_equity * 100).toFixed(1) + '%', roeBody);
+    lynchCards += lCard(roeSig, 'Return on Equity', (s.return_on_equity * 100).toFixed(1) + '%', roeBody, peerLine('return_on_equity', fmtPct));
   }
 
   var lynchNoteHtml = '<div class="lynch-note">' +
@@ -1621,6 +1824,14 @@ function buildPanelHTML(s) {
       '<div class="panel-price">' + priceHtml + '</div>' +
       '<div class="panel-meta-row">' +
         '<span class="panel-sector">' + jEsc(s.sector) + '</span>' +
+        (function() {
+          if (s.sector_etf == null || s.sector_vs_etf == null) return '';
+          var sign  = s.sector_vs_etf >= 0 ? '+' : '';
+          var cls2  = s.sector_vs_etf >= 0 ? 'up' : 'down';
+          var arrow = s.sector_vs_etf >= 0 ? '▲' : '▼';
+          return '<span class="sector-rs sector-rs--' + cls2 + '">vs ' +
+            jEsc(s.sector_etf) + ' ' + sign + (s.sector_vs_etf * 100).toFixed(1) + '% ' + arrow + '</span>';
+        })() +
         '<span class="cycle-badge cycle-badge--' + cycleClass(s.cycle_stage) + '">' +
           jEsc(s.cycle_stage || 'NONE') + '</span>' +
       '</div>' +
@@ -1629,10 +1840,6 @@ function buildPanelHTML(s) {
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">The Story</h3>' +
         '<div class="panel-story">' + storyHtml + '</div>' +
-      '</section>' +
-      '<section class="panel-section">' +
-        '<h3 class="panel-section-title">Micha Method <span class="panel-tally">' + passCount + '/12</span></h3>' +
-        '<div class="crit-list">' + michaHtml + '</div>' +
       '</section>' +
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">Peter Lynch <span class="panel-tally">' +
@@ -1645,6 +1852,10 @@ function buildPanelHTML(s) {
         '<div class="peter-simple-view hidden">' +
           lynchNoteHtml +
         '</div>' +
+      '</section>' +
+      '<section class="panel-section">' +
+        '<h3 class="panel-section-title">Micha Method <span class="panel-tally">' + passCount + '/12</span></h3>' +
+        '<div class="crit-list">' + michaHtml + '</div>' +
       '</section>' +
       '<section class="panel-section">' +
         '<h3 class="panel-section-title">The Verdict</h3>' +
@@ -1966,6 +2177,8 @@ def build_report(portfolio_results, suggestions, newspaper_text,
             "free_cash_flow":      r.get("free_cash_flow"),
             "return_on_equity":    r.get("return_on_equity"),
             "market_cap":          r.get("market_cap"),
+            "sector_etf":          r.get("sector_etf"),
+            "sector_vs_etf":       r.get("sector_vs_etf"),
             "sparkline":           _sparkline_points(r),
             "domain":              TICKER_DOMAIN.get(ticker.upper(), ""),
         })
@@ -2086,9 +2299,21 @@ def build_report(portfolio_results, suggestions, newspaper_text,
 </div>
 
 <div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+
+<div id="lynchTab" class="lynch-tab">
+  <div class="lynch-tab-current" onclick="toggleLynchOptions()" title="Lynch company category">
+    <span id="lynchTabEmoji" class="lynch-tab-emoji"></span>
+    <span id="lynchTabLabel" class="lynch-tab-label"></span>
+    <span class="lynch-tab-hint">tap ▾</span>
+  </div>
+  <div id="lynchTabAll" class="lynch-tab-all"></div>
+</div>
+
 <aside class="detail-panel" id="detailPanel" role="dialog" aria-modal="true" aria-label="Stock detail">
   <button class="panel-close" onclick="closePanel()" aria-label="Close">&times;</button>
-  <div id="panelContent" class="panel-content"></div>
+  <div class="panel-scroll">
+    <div id="panelContent" class="panel-content"></div>
+  </div>
 </aside>
 
 <script>{_js(stocks_json, n_portfolio)}</script>
@@ -2155,6 +2380,7 @@ if __name__ == "__main__":
         "revenue_growth": 0.05, "earnings_growth": 0.08, "profit_margin": 0.263,
         "debt_to_equity": 1.77, "free_cash_flow": 108_000_000_000,
         "return_on_equity": 1.47, "market_cap": 2_900_000_000_000,
+        "sector_etf": "XLK", "sector_vs_etf": 0.038,
     }
 
     _demo_suggest = {
@@ -2207,6 +2433,7 @@ if __name__ == "__main__":
         "revenue_growth": 1.22, "earnings_growth": 1.68, "profit_margin": 0.557,
         "debt_to_equity": 0.41, "free_cash_flow": 60_400_000_000,
         "return_on_equity": 1.23, "market_cap": 2_800_000_000_000,
+        "sector_etf": "SOXX", "sector_vs_etf": 0.127,
     }
 
     _newspaper = """MARKET OVERVIEW
@@ -2221,5 +2448,32 @@ The portfolio maintains a bullish posture with five of eight positions in accumu
 
 Risk management remains paramount. Investors should scale into positions gradually, respecting the buy zones identified below key technical support levels. The overall risk-reward profile remains favorable given current market dynamics."""
 
-    build_report([_demo_result], [_demo_suggest], _newspaper, "test_report.html")
+    # Extra demo stocks so peer comparisons are visible (same sectors as above)
+    _demo_msft = {
+        "ticker": "MSFT", "name": "Microsoft Corp.", "sector": "Technology",
+        "micha_score": 10, "micha_criteria": {}, "micha_reasons": {},
+        "peter_score": 8.2, "peter_scores": {}, "peter_summary": "Microsoft's cloud business is compounding at scale.",
+        "verdict": {"action": "ACCUMULATE"}, "cycle_stage": "MID",
+        "cycle_stage_reasoning": "", "buy_zone": None, "buy_zone_narrative": "",
+        "price_levels": {"price_now": 415.20, "sma50": 400.10, "sma150": 375.00},
+        "pe_ratio": 35.1, "forward_pe": 28.0, "peg_ratio": 2.4,
+        "revenue_growth": 0.17, "earnings_growth": 0.21, "profit_margin": 0.368,
+        "debt_to_equity": 0.65, "free_cash_flow": 75_000_000_000,
+        "return_on_equity": 0.38, "market_cap": 3_100_000_000_000,
+        "sector_etf": "XLK", "sector_vs_etf": 0.021,
+    }
+    _demo_tsm = {
+        "ticker": "TSM", "name": "TSMC", "sector": "Semiconductors",
+        "micha_score": 9, "micha_criteria": {}, "micha_reasons": {},
+        "peter_score": 7.9, "peter_scores": {}, "peter_summary": "TSMC manufactures chips for the world's leading fabs.",
+        "verdict": {"action": "ACCUMULATE"}, "cycle_stage": "EARLY",
+        "cycle_stage_reasoning": "", "buy_zone": None, "buy_zone_narrative": "",
+        "price_levels": {"price_now": 185.40, "sma50": 178.00, "sma150": 158.00},
+        "pe_ratio": 22.8, "forward_pe": 18.5, "peg_ratio": 1.1,
+        "revenue_growth": 0.38, "earnings_growth": 0.51, "profit_margin": 0.401,
+        "debt_to_equity": 0.29, "free_cash_flow": 28_000_000_000,
+        "return_on_equity": 0.28, "market_cap": 960_000_000_000,
+        "sector_etf": "SOXX", "sector_vs_etf": -0.032,
+    }
+    build_report([_demo_result, _demo_msft], [_demo_suggest, _demo_tsm], _newspaper, "test_report.html")
     print("Written test_report.html — open in a browser to review.")
