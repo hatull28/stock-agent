@@ -94,3 +94,11 @@ if __name__ == "__main__":
     from discord_sender import send_briefing
     ok = send_briefing(results["portfolio"], results["suggestions"])
     print("Sent to Discord!" if ok else "Discord send failed.")
+
+    # === push report to git ===
+    import subprocess, datetime
+    date_str = datetime.date.today().strftime("%Y-%m-%d")
+    subprocess.run(["git", "add", "daily_report.html"], check=True)
+    subprocess.run(["git", "commit", "-m", f"Daily report update {date_str}"], check=True)
+    subprocess.run(["git", "push"], check=True)
+    print("Report pushed to git.")
