@@ -53,9 +53,10 @@ WATCHLIST = ["DELL", "INTC", "FSLR", "NKE", "TSLA"]
 BENCHMARK = "^GSPC"
 ```
 
-The agent also generates 2-3 diversifier suggestions from non-tech sectors
-(Healthcare, Financials, Energy, Consumer, Industrials) to balance the
-tech-heavy portfolio.
+The agent generates exactly **3 diversifier suggestions** (top 3 by combined score)
+from non-tech sectors (Healthcare, Financials, Energy, Consumer Discretionary,
+Industrials) to balance the tech-heavy portfolio. WATCHLIST is defined but
+currently unused by the pipeline.
 
 ---
 
@@ -103,10 +104,15 @@ return_on_equity, market_cap.
 - Classic broadsheet newspaper aesthetic
 - FT-style cream morning edition + dark night terminal edition (toggle)
 - Byline "by Tal Haran" in masthead
-- Signals strip (colored action pills) below masthead
-- Full-width Morning Dispatch (AI briefing as lead article)
-- Stock cards with sparklines, score bars, cycle badge, sector ETF badge
+- Signals strip (colored action pills) below masthead, above the briefing
+- Full-width Morning Dispatch (AI briefing as lead article with drop-cap + pull-quote)
+- Duck illustration (`assets/duck.png`) in Morning Dispatch sidebar
+- Heatmap grid (4-column, each cell = ticker + Micha score + action, colored by verdict)
+- Stock cards with Clearbit logos (JS fallback to initials), sparklines (Canvas), score bars, cycle badge, sector ETF badge, buy zone badge
 - Slide-out detail panel per stock (click any card)
+- Detail panel: Micha checklist, Peter Lynch "handwritten notepad" view, Lynch category tab (floating, right of panel — Stalwart / Fast Grower / etc.), key financials table, verdict section
+- Lynch sticker shown inside panel on mobile (tab is hidden on screens ≤600px)
+- Mobile-responsive: panel goes full-screen, signals strip wraps, dispatch goes single-column
 - Charts (radar + distribution) moved to bottom of page
 - GitHub Pages auto-publishes after each run via run_agent.bat
 
@@ -145,11 +151,16 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 - "The Wire" broadsheet HTML report with theme toggle
 - Discord embed delivery with report link
 - GitHub Pages auto-publish (run_agent.bat does git push)
-- Git version control (8+ commits of clean history)
+- Git version control (clean history)
 - Claude Code workflow established (plan mode, review before approve)
 - AI temperature tuned (0.2 general, 0.0 verdict)
 - Volume criteria fixed (circular baseline bug)
 - Golden cross fixed (full window scan)
+- Duck illustration in Morning Dispatch sidebar
+- Heatmap grid (4-col, color-coded by verdict)
+- Clearbit company logos with JS initials fallback
+- Lynch category floating tab (Stalwart / Fast Grower / etc.)
+- Mobile-responsive layout (full-screen panel, Lynch sticker, single-column dispatch)
 
 ---
 
@@ -189,3 +200,7 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 - DeepSeek free tier can be slow; paid tier is faster and more reliable
 - AI criteria (7 & 8) can vary slightly run-to-run — this is normal
 - run_agent.bat includes git push — don't run it just to test locally
+- `run.py` unconditionally commits and pushes at the end of every run, even if nothing changed
+- `propose_diversifiers()` in ai_layer.py has dead/unreachable code after `return filtered` (lines ~366-387) — safe to ignore, doesn't affect output
+- Peter Lynch sub-scores are 1–10 (not 0–10), so the aggregate is never actually 0; described as "0–10" throughout but minimum is ~1
+- `WATCHLIST` in config.py is defined but never imported or used anywhere in the pipeline
