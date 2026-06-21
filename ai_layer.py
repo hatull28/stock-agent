@@ -130,17 +130,25 @@ Some values may be null if unavailable - score those criteria conservatively.
 Fundamentals:
 {facts_text}
 
-Score each of these 10 criteria from 1 (poor) to 10 (excellent):
+Score each of these 10 criteria from 1 (poor) to 10 (excellent).
+
+IMPORTANT — data availability:
+- Criteria 1, 2, 4, 5, 7: score freely from the fundamentals above.
+- Criteria 3, 6, 8, 9, 10: NO specific data was provided for these (no net income trend,
+  no competitive positioning, no management data, no industry rank). Score these at exactly 5
+  unless the available fundamentals strongly imply otherwise (e.g. FCF=negative implies
+  poor cash quality). Do NOT invent narrative; just score 5 as neutral.
+
 1. Revenue Growth
 2. EPS Growth
-3. Net Income Trend
+3. Net Income Trend  [no trend data — default 5 unless earnings_growth implies otherwise]
 4. Balance Sheet Strength
 5. Cash Flow Quality
-6. Moat & Competitive Edge
+6. Moat & Competitive Edge  [no competitive data — default 5]
 7. Valuation (P/E, PEG, FCF yield)
-8. Management quality
-9. Industry strength
-10. Long-term compounding potential
+8. Management quality  [no management data — default 5]
+9. Industry strength  [no industry data — default 5]
+10. Long-term compounding potential  [infer from available data only]
 
 Respond ONLY with valid JSON in exactly this format:
 {{
@@ -216,14 +224,24 @@ Provide a verdict. Remember: a stock can be fundamentally strong but technically
 weak (possible buy-the-dip), or technically strong but fundamentally weak (momentum
 but risky). Reason about the COMBINATION.
 
+Rules:
+- The "action" field MUST be exactly one of: BUY NOW, WAIT FOR PULLBACK, AVOID, ACCUMULATE.
+  No other strings are accepted.
+- The "short_term" field MUST be consistent with the "action" field. If action is AVOID or
+  WAIT FOR PULLBACK, short_term must not recommend buying. If action is BUY NOW or ACCUMULATE,
+  short_term must not say to wait or avoid.
+- The "accumulation_strategy" field must NOT mention specific dollar price targets. Describe
+  only the approach (tranching, sizing, triggers) — specific price zones are provided
+  separately by the system.
+
 Respond ONLY with valid JSON in this format:
 {{
   "micha_meaning": "1 sentence on what the technical score means here",
   "peter_meaning": "1 sentence on what the fundamental score means here",
-  "short_term": "recommendation for 1-6 months",
+  "short_term": "recommendation for 1-6 months, consistent with the action",
   "long_term": "recommendation for 2-5 years",
   "action": "BUY NOW / WAIT FOR PULLBACK / AVOID / ACCUMULATE",
-  "accumulation_strategy": "1-2 sentences on how to build a position"
+  "accumulation_strategy": "1-2 sentences on approach only, no specific price targets"
 }}"""
 
     response = client.chat.completions.create(
@@ -246,6 +264,28 @@ Respond ONLY with valid JSON in this format:
     except json.JSONDecodeError:
         print(f"  WARNING: could not parse verdict for {ticker}")
         return None
+
+    # Validate and normalise the action string
+    _allowed = {"BUY NOW", "WAIT FOR PULLBACK", "AVOID", "ACCUMULATE"}
+    raw_action = (parsed.get("action") or "").upper().strip()
+    if raw_action not in _allowed:
+        if "BUY" in raw_action:
+            parsed["action"] = "BUY NOW"
+        elif any(w in raw_action for w in ("WAIT", "PULL", "HOLD", "WATCH")):
+            parsed["action"] = "WAIT FOR PULLBACK"
+        elif any(w in raw_action for w in ("AVOID", "SELL", "REDUCE")):
+            parsed["action"] = "AVOID"
+        else:
+            parsed["action"] = "WAIT FOR PULLBACK"
+        print(f"  NOTE: normalised action '{raw_action}' → '{parsed['action']}' for {ticker}")
+
+    # Hard Micha floor: very weak technicals override bullish actions
+    if micha_score <= 2 and parsed.get("action") in ("BUY NOW", "ACCUMULATE"):
+        parsed["action"] = "AVOID"
+        print(f"  NOTE: Micha {micha_score}/12 ≤ 2 — overriding action to AVOID for {ticker}")
+    elif micha_score <= 4 and parsed.get("action") == "BUY NOW":
+        parsed["action"] = "ACCUMULATE"
+        print(f"  NOTE: Micha {micha_score}/12 ≤ 4 — downgrading BUY NOW to ACCUMULATE for {ticker}")
 
     return parsed
 
@@ -418,6 +458,27 @@ def write_newspaper(portfolio_results, suggestions):
 
     market_snapshot = _get_market_snapshot()
 
+    _CRIT_NAMES = {
+        "1_price_above_sma150": "Price>SMA150",
+        "2_sma150_slope_positive": "SMA150 rising",
+        "3_price_above_sma50": "Price>SMA50",
+        "4_sma50_above_sma150": "SMA50>SMA150",
+        "5_golden_cross_recent": "Golden cross",
+        "6_atr_shock_recent": "ATR shock",
+        "7_breakout_quality": "Breakout",
+        "8_retest_quality": "Retest",
+        "9_volume_expansion": "Vol expansion",
+        "10_volume_dryup_before": "Vol dry-up",
+        "11_higher_highs_lows": "Higher H&L",
+        "12_rs_vs_sp500": "RS vs S&P",
+    }
+
+    def _crit_summary(r):
+        crit = r.get("micha_criteria") or {}
+        passing = [_CRIT_NAMES.get(k, k) for k, v in crit.items() if v]
+        failing = [_CRIT_NAMES.get(k, k) for k, v in crit.items() if not v]
+        return f"passes: {', '.join(passing) or 'none'}. fails: {', '.join(failing) or 'none'}"
+
     # build a compact data summary for the AI to write from
     lines = ["PORTFOLIO:"]
     for r in portfolio_results:
@@ -426,6 +487,7 @@ def write_newspaper(portfolio_results, suggestions):
             f"- {r['ticker']} ({r['name']}): Micha {r['micha_score']}/12, "
             f"Peter {r['peter_score']}/10, Action: {v.get('action','?')}. "
             f"Short-term: {v.get('short_term','')}. "
+            f"Technicals: {_crit_summary(r)}. "
             f"Fundamentals: {r['peter_summary']}"
         )
 

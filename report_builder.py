@@ -87,6 +87,10 @@ def _price_line(price_levels):
 
 
 def _sparkline_points(r):
+    # Prefer real 60-day close history; fall back to static price levels for old data
+    close_60d = r.get("close_60d")
+    if close_60d and len(close_60d) >= 10:
+        return close_60d
     pl = r.get("price_levels") or {}
     pts = [
         pl.get("week_52_low"),
@@ -263,8 +267,12 @@ def _stock_card(r):
     if buy_zone:
         bz_low = buy_zone.get("low")
         bz_high = buy_zone.get("high")
+        price_now = (r.get("price_levels") or {}).get("price_now")
         if bz_low and bz_high:
-            buy_html = f'<span class="buy-zone-badge">Buy ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
+            if price_now and price_now > bz_high * 1.12:
+                buy_html = f'<span class="buy-zone-badge" title="Stock extended — pullback target">Pullback ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
+            else:
+                buy_html = f'<span class="buy-zone-badge">Buy ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
     return (
         f'<article class="card card--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
         f'role="button" tabindex="0">'
@@ -1845,10 +1853,9 @@ function buildPanelHTML(s) {
   }
 
   // Section 2: Micha Method
-  var crit    = s.micha_criteria || {};
-  var reasons = s.micha_reasons  || {};
-  var passCount = 0;
-  CRITERIA_ORDER.forEach(function(k) { if (crit[k]) passCount++; });
+  var crit      = s.micha_criteria || {};
+  var reasons   = s.micha_reasons  || {};
+  var passCount = s.micha_score || 0;  // use pre-computed score, not a re-count
 
   var michaHtml = '';
   CRITERIA_ORDER.forEach(function(key) {
@@ -2403,6 +2410,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
             "sector_etf":          r.get("sector_etf"),
             "sector_vs_etf":       r.get("sector_vs_etf"),
             "sparkline":           _sparkline_points(r),
+            "close_60d":           r.get("close_60d") or [],
             "domain":              TICKER_DOMAIN.get(ticker.upper(), ""),
         })
     stocks_json = json.dumps(stocks_payload, ensure_ascii=False, default=_json_default)

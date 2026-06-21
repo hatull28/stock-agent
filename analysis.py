@@ -65,7 +65,7 @@ def micha_criteria_6_to_12_code(data, benchmark_data):
 
     results = {}
 
-    # --- 6: ATR shock (a recent day moved > 3% beyond normal range) ---
+    # --- 6: ATR shock (a recent day surged > 3% beyond normal range, upward only) ---
     # True Range = the bigger of: today's high-low, or gap from yesterday's close
     prev_close = close.shift(1)
     true_range = pd.concat([
@@ -75,11 +75,10 @@ def micha_criteria_6_to_12_code(data, benchmark_data):
     ], axis=1).max(axis=1)
     atr = true_range.rolling(window=14).mean()
 
-    # daily % move over the last 10 days vs the typical ATR %
-    recent_pct_moves = (close.pct_change().abs() * 100).iloc[-10:]
     atr_pct = (atr.iloc[-1] / close.iloc[-1]) * 100
-    # "shock" = any recent day moved more than ATR% + 3%
-    results["6_atr_shock_recent"] = bool((recent_pct_moves > (atr_pct + 3)).any())
+    # Only count upward shocks — a big down-day is bearish, not a buy signal
+    up_moves = (close.pct_change() * 100).iloc[-10:]
+    results["6_atr_shock_recent"] = bool((up_moves > (atr_pct + 3)).any())
 
     # --- 9: Volume expansion (recent volume above its average) ---
     # Use days 21-70 ago as the baseline: excludes both the dry-up window (days 6-20)
@@ -128,8 +127,7 @@ def compute_price_levels(data):
     recent_3m_low  = float(close.iloc[-63:].min())
     recent_3m_high = float(close.iloc[-63:].max())
     prior_3m_low   = float(close.iloc[-126:-63].min())
-    hist = close.iloc[-252:] if len(close) >= 252 else close
-    week_52_low = float(hist.min())
+    week_52_low = float(close.iloc[-252:].min()) if len(close) >= 252 else None
 
     # day-over-day price change
     price_change     = float(close.iloc[-1] - close.iloc[-2])
@@ -312,4 +310,5 @@ def analyze_stock(ticker, benchmark_data):
         "market_cap":            fundamentals.get("market_cap"),
         "sector_etf":            sector_etf,
         "sector_vs_etf":         sector_vs_etf,
+        "close_60d":             [round(float(p), 2) for p in data["Close"].iloc[-60:].dropna()],
     }
