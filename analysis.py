@@ -19,6 +19,27 @@ SECTOR_ETF = {
 # Cache ETF price histories within a single run to avoid duplicate fetches
 _etf_cache = {}
 
+
+def fetch_etf_returns():
+    """Fetch all sector ETFs once and return pre-computed 6-month returns.
+    Returns: {"XLK": 0.123, "XLC": -0.045, ...}
+    Call this once at the start of a run and pass the result to analyze_stock().
+    """
+    from data import get_price_history
+    unique_etfs = set(SECTOR_ETF.values())
+    returns = {}
+    for etf in unique_etfs:
+        try:
+            etf_data = get_price_history(etf)
+            _etf_cache[etf] = etf_data
+            close = etf_data["Close"].dropna()
+            if len(close) >= 20:
+                window = min(126, len(close) - 1)
+                returns[etf] = float((close.iloc[-1] / close.iloc[-window]) - 1)
+        except Exception as e:
+            print(f"  ETF fetch skipped for {etf}: {e}")
+    return returns
+
 def micha_criteria_1_to_5(data):
     """Compute Micha Method criteria 1-5 from price history.
     Returns a dict of PASS/FAIL results."""
@@ -238,7 +259,7 @@ if __name__ == "__main__":
         print(f"  {r['ticker']:6} {r['score']}/12")
 
 
-def analyze_stock(ticker, benchmark_data):
+def analyze_stock(ticker, benchmark_data, etf_returns=None):
     """Run the COMPLETE analysis (all 3 parts) for one stock."""
     from data import get_price_history
     from fundamentals import get_fundamentals
@@ -270,15 +291,26 @@ def analyze_stock(ticker, benchmark_data):
     sector_vs_etf = None
     if etf_ticker:
         try:
-            if etf_ticker not in _etf_cache:
-                _etf_cache[etf_ticker] = get_price_history(etf_ticker)
-            etf_data = _etf_cache[etf_ticker]
-            window = min(126, len(data["Close"]) - 1, len(etf_data["Close"]) - 1)
-            if window > 10:
-                stock_ret = (data["Close"].iloc[-1] / data["Close"].iloc[-window]) - 1
-                etf_ret   = (etf_data["Close"].iloc[-1] / etf_data["Close"].iloc[-window]) - 1
-                sector_vs_etf = float(stock_ret - etf_ret)
-                sector_etf    = etf_ticker
+            if etf_returns and etf_ticker in etf_returns:
+                # Use the shared pre-computed ETF return (fixed window, same baseline for all stocks)
+                etf_ret = etf_returns[etf_ticker]
+                close = data["Close"].dropna()
+                window = min(126, len(close) - 1)
+                if window > 10:
+                    stock_ret = float((close.iloc[-1] / close.iloc[-window]) - 1)
+                    sector_vs_etf = float(stock_ret - etf_ret)
+                    sector_etf    = etf_ticker
+            else:
+                # Fallback: fetch per-stock (standalone runs / tests)
+                if etf_ticker not in _etf_cache:
+                    _etf_cache[etf_ticker] = get_price_history(etf_ticker)
+                etf_data = _etf_cache[etf_ticker]
+                window = min(126, len(data["Close"]) - 1, len(etf_data["Close"]) - 1)
+                if window > 10:
+                    stock_ret = (data["Close"].iloc[-1] / data["Close"].iloc[-window]) - 1
+                    etf_ret   = (etf_data["Close"].iloc[-1] / etf_data["Close"].iloc[-window]) - 1
+                    sector_vs_etf = float(stock_ret - etf_ret)
+                    sector_etf    = etf_ticker
         except Exception as e:
             print(f"  Sector ETF fetch skipped for {ticker} ({etf_ticker}): {e}")
 

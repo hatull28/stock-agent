@@ -6,7 +6,7 @@ truststore.inject_into_ssl()
 from data import get_price_history
 from fundamentals import get_fundamentals
 from config import PORTFOLIO, BENCHMARK
-from analysis import analyze_stock
+from analysis import analyze_stock, fetch_etf_returns
 from ai_layer import propose_diversifiers
 
 TARGET_SECTORS = ["Healthcare", "Financials", "Energy",
@@ -17,13 +17,16 @@ def run_daily_analysis():
     print("Fetching benchmark (S&P500)...")
     benchmark_data = get_price_history(BENCHMARK)
 
+    print("Fetching sector ETF baselines...")
+    etf_returns = fetch_etf_returns()
+
     # === PART A: analyze the portfolio ===
     print("\n=== ANALYZING PORTFOLIO ===")
     portfolio_results = []
     for ticker in PORTFOLIO:
         print(f"  analyzing {ticker}...")
         try:
-            result = analyze_stock(ticker, benchmark_data)
+            result = analyze_stock(ticker, benchmark_data, etf_returns)
             portfolio_results.append(result)
         except Exception as e:
             print(f"  ERROR on {ticker}: {e}")
@@ -42,7 +45,7 @@ def run_daily_analysis():
             if not f.get("market_cap"):
                 print(f"    skipping {ticker} - no data")
                 continue
-            result = analyze_stock(ticker, benchmark_data)
+            result = analyze_stock(ticker, benchmark_data, etf_returns)
             suggestion_results.append(result)
         except Exception as e:
             print(f"    ERROR on {ticker}: {e}")
