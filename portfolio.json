@@ -1,0 +1,5 @@
+{
+  "portfolio": ["AAPL", "NVDA", "MSFT", "GOOGL", "TSM", "AMZN", "ASML", "META"],
+  "watchlist": ["DELL", "INTC", "FSLR", "NKE", "TSLA"],
+  "benchmark": "^GSPC"
+}
