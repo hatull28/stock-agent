@@ -36,21 +36,25 @@ _ERAS = [
 def dedup_to_crosses(records):
     """Collapse consecutive signal-day clusters into one record per actual cross.
 
-    Rule: if two consecutive signal-day dates are more than 15 calendar days
-    apart they belong to different crosses. Keep the FIRST day of each cluster
-    (the actual cross date) with its already-stored forward returns.
+    Rule: a new cross event starts when there is a gap of more than
+    _DEDUP_GAP_DAYS calendar days between consecutive signal-days.
+    Keep the FIRST day of each cluster (the actual cross date).
 
-    Why 15 days: within one cluster, consecutive days are 1–6 calendar days
-    apart (weekends/holidays). Between separate crosses the gap is >= 35
-    calendar days (25 trading days x ~1.4). 15 days cleanly separates them.
+    Why track last_seen (not last_kept): the criterion fires True for ~25
+    consecutive trading days per cross. If we compared each new record against
+    the last-KEPT record, records within the same cluster could be > 15 cal days
+    from the cluster start and falsely counted as new events. Tracking last_seen
+    (every record, whether kept or not) correctly identifies breaks in the True
+    streak — a gap only appears when the criterion actually went False.
     """
     if not records:
         return []
     crosses = [records[0]]
+    last_seen = records[0]["date"]
     for rec in records[1:]:
-        gap = (rec["date"] - crosses[-1]["date"]).days
-        if gap > _DEDUP_GAP_DAYS:
+        if (rec["date"] - last_seen).days > _DEDUP_GAP_DAYS:
             crosses.append(rec)
+        last_seen = rec["date"]
     return crosses
 
 
