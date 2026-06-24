@@ -1,23 +1,39 @@
 """
 backtest_all_criteria.py
-Walk-forward backtest of all 10 DETERMINISTIC Micha criteria on AAPL, 20 years.
+Walk-forward backtest of all 10 DETERMINISTIC Micha criteria,
+across all 8 portfolio tickers. Per-stock only — no pooling.
 
 Criteria 7 & 8 (AI-judged) are excluded — they cannot be backtested without
 lookahead bias. This file covers: 1, 2, 3, 4, 5, 6, 9, 10, 11, 12.
 
-Walk-forward discipline (same as backtest_engine.py):
+Walk-forward discipline:
   Signal  : computed on stock_df.iloc[0:i+1]  — strictly no lookahead
   Forward : separate numpy arrays, indices i+30, i+60, i+90
 
-Output: terminal report only. Descriptive — no recommendations.
+Output:
+  Terminal — compact cross-stock matrix (criteria × tickers, 30d median)
+  File     — backtest_report.txt, full per-stock per-era detail
 """
 
+import json
 import statistics
+import sys
 import time
 from datetime import date
+from pathlib import Path
 
 from analysis import micha_criteria_1_to_5, micha_criteria_6_to_12_code
 from backtest_data import fetch_history
+
+# ── Portfolio ──────────────────────────────────────────────────────────────────
+
+_PORTFOLIO_FILE = Path(__file__).parent / "portfolio.json"
+
+
+def _load_portfolio():
+    with open(_PORTFOLIO_FILE) as f:
+        return json.load(f)["portfolio"]
+
 
 # ── Walk-forward parameters ────────────────────────────────────────────────────
 
@@ -26,7 +42,7 @@ _N_FORWARD = 90    # exclude signals within 90 trading days of end
 
 # ── Criterion metadata ─────────────────────────────────────────────────────────
 
-# (key in criteria dict, short label, dedup gap in calendar days, rationale)
+# (key, short label, dedup gap calendar days, rationale)
 _CRITERIA = [
     ("1_price_above_sma150",    "C1  price > SMA150",       6,
      "sustained trend — gap >6 tolerates holiday weekends without splitting a streak"),
@@ -62,7 +78,8 @@ _ERAS = [
     ("Recent (2023–present)",            None),
 ]
 
-_SMALL_N = 5
+_SMALL_N             = 5
+_SHORT_HISTORY_YEARS = 15.0   # flag tickers with less than this
 
 
 # ── Walk-forward engine ────────────────────────────────────────────────────────
@@ -70,10 +87,18 @@ _SMALL_N = 5
 def run_all_criteria(ticker="AAPL", years=20):
     """Walk-forward scan for all 10 deterministic criteria.
 
-    Returns: dict {criterion_key: [{"date": date, "excess_30": float, ...}, ...]}
+    Returns:
+        (raw_records, all_signal_counts, excluded_end, n_total, first_date, last_date)
     """
     print(f"Loading data for {ticker} + benchmark...")
     stock_df, bench_df = fetch_history(ticker, years=years)
+
+    # Normalize tz: fresh yfinance data is tz-aware; cached CSV reads back tz-naive.
+    # Strip tz from both so the intersection works regardless of fetch order.
+    if hasattr(stock_df.index, "tz") and stock_df.index.tz is not None:
+        stock_df.index = stock_df.index.tz_localize(None)
+    if hasattr(bench_df.index, "tz") and bench_df.index.tz is not None:
+        bench_df.index = bench_df.index.tz_localize(None)
 
     common_idx = stock_df.index.intersection(bench_df.index)
     stock_df = stock_df.loc[common_idx].copy()
@@ -81,14 +106,17 @@ def run_all_criteria(ticker="AAPL", years=20):
 
     n = len(stock_df)
     dates = stock_df.index
+    first_date = dates[0].date()
+    last_date  = dates[-1].date()
     stock_close = stock_df["Close"].values
     bench_close = bench_df["Close"].values
 
-    print(f"Aligned: {n:,} trading days  ({dates[0].date()} → {dates[-1].date()})\n")
+    actual_years = (last_date - first_date).days / 365.25
+    print(f"Aligned: {n:,} trading days  ({first_date} → {last_date},  {actual_years:.1f}yr)\n")
 
-    raw_records = {key: [] for key, *_ in _CRITERIA}
-    all_signal_counts = {key: 0 for key, *_ in _CRITERIA}
-    excluded_end = {key: 0 for key, *_ in _CRITERIA}
+    raw_records       = {key: [] for key, *_ in _CRITERIA}
+    all_signal_counts = {key: 0  for key, *_ in _CRITERIA}
+    excluded_end      = {key: 0  for key, *_ in _CRITERIA}
 
     t0 = time.time()
     scan_start = _MIN_ROWS - 1
@@ -102,11 +130,10 @@ def run_all_criteria(ticker="AAPL", years=20):
         slice_s = stock_df.iloc[0:i + 1]
         slice_b = bench_df.iloc[0:i + 1]
 
-        c1to5 = micha_criteria_1_to_5(slice_s)
+        c1to5  = micha_criteria_1_to_5(slice_s)
         c6to12 = micha_criteria_6_to_12_code(slice_s, slice_b)
-        all_c = {**c1to5, **c6to12}
+        all_c  = {**c1to5, **c6to12}
 
-        # Pre-compute forward returns once (shared across all criteria)
         near_end = (i + _N_FORWARD >= n)
         if not near_end:
             s0 = stock_close[i]
@@ -129,7 +156,7 @@ def run_all_criteria(ticker="AAPL", years=20):
     elapsed = time.time() - t0
     print(f"\nScan complete — {n - scan_start:,} days in {elapsed:.1f}s\n")
 
-    return raw_records, all_signal_counts, excluded_end, n
+    return raw_records, all_signal_counts, excluded_end, n, first_date, last_date
 
 
 # ── Deduplication ──────────────────────────────────────────────────────────────
@@ -137,13 +164,9 @@ def run_all_criteria(ticker="AAPL", years=20):
 def dedup(records, gap_days):
     """Keep the first record of each True-streak event.
 
-    A new event is declared when the gap between consecutive signal-days exceeds
-    gap_days calendar days (meaning the criterion was False for that interval).
-
-    Critical: compare each record against the LAST-SEEN record (whether kept or
-    not), not the last-KEPT record. Using last-kept causes false splits within
-    long continuous True streaks because after gap_days calendar days inside the
-    same streak, the gap from the cluster-start exceeds the threshold.
+    Compares each record against the last-SEEN date (not last-kept) so that
+    long continuous streaks do not get falsely split when the gap from the
+    cluster start exceeds gap_days inside the same streak.
     """
     if not records:
         return []
@@ -151,8 +174,8 @@ def dedup(records, gap_days):
     last_seen = records[0]["date"]
     for rec in records[1:]:
         if (rec["date"] - last_seen).days > gap_days:
-            out.append(rec)       # new event: gap in True signal detected
-        last_seen = rec["date"]  # always advance, kept or not
+            out.append(rec)
+        last_seen = rec["date"]
     return out
 
 
@@ -181,91 +204,105 @@ def _assign_era(d):
     return _ERAS[-1][0]
 
 
-# ── Report ─────────────────────────────────────────────────────────────────────
+# ── Full per-stock detail report ───────────────────────────────────────────────
 
 W = 70
 
-def _bar():  print("=" * W)
-def _dash(): print("─" * W)
 
+def print_report(raw_records, all_signal_counts, excluded_end, n_total,
+                 ticker="AAPL", first_date=None, last_date=None, file=None):
+    """Print full per-criterion + per-era breakdown for one ticker."""
 
-def _overall_row(key, crosses):
-    label, gap, _ = _KEY_TO_META[key]
-    n = len(crosses)
-    vals_30 = [r["excess_30"] for r in crosses]
-    med30, lo30, hi30, pos30, neg30 = _stats(vals_30)
-    med60, *_ = _stats([r["excess_60"] for r in crosses])
-    med90, *_ = _stats([r["excess_90"] for r in crosses])
-    return (med30 or 0, label, n, med30, med60, med90, pos30, neg30)
+    def p(*args, **kw):
+        print(*args, file=file, **kw)
 
+    def bar():
+        p("=" * W)
 
-def print_report(raw_records, all_signal_counts, excluded_end, n_total):
+    def dash():
+        p("─" * W)
+
+    actual_years = ((last_date - first_date).days / 365.25
+                    if first_date and last_date else None)
+    span_str = (f"{first_date} → {last_date} ({actual_years:.1f}yr)"
+                if actual_years else "unknown span")
+
+    bar()
+    p(f"  {ticker} — MICHA METHOD BACKTEST")
+    p(f"  Data span: {span_str}")
+    if actual_years and actual_years < _SHORT_HISTORY_YEARS:
+        p(f"  *** SHORT HISTORY: only {actual_years:.1f}yr — samples will be smaller ***")
+    bar()
 
     # ── 1. Diagnostic ──────────────────────────────────────────────────────────
-    _bar()
-    print("  DIAGNOSTIC — RAW SIGNAL-DAYS AND DEDUP")
-    _bar()
-    print(f"  {'Criterion':<30}  {'Raw':>5}  {'Excl':>5}  {'Valid':>5}  "
-          f"{'Gap':>5}  {'Events':>6}")
-    _dash()
+    p()
+    p("  DIAGNOSTIC — RAW SIGNAL-DAYS AND DEDUP")
+    dash()
+    p(f"  {'Criterion':<30}  {'Raw':>5}  {'Excl':>5}  {'Valid':>5}  "
+      f"{'Gap':>5}  {'Events':>6}")
+    dash()
 
     criterion_crosses = {}
     for key, label, gap, _ in _CRITERIA:
-        raw = raw_records[key]
-        valid = len(raw)
-        excl = excluded_end[key]
+        raw    = raw_records[key]
+        valid  = len(raw)
+        excl   = excluded_end[key]
         crosses = dedup(raw, gap)
         criterion_crosses[key] = crosses
-        print(f"  {label:<30}  {all_signal_counts[key]:>5}  {excl:>5}  "
-              f"{valid:>5}  {gap:>4}d  {len(crosses):>6}")
+        p(f"  {label:<30}  {all_signal_counts[key]:>5}  {excl:>5}  "
+          f"{valid:>5}  {gap:>4}d  {len(crosses):>6}")
 
-    print()
-    print("  'Events' = independent occurrences after dedup (the real sample size)")
-    print()
+    p()
+    p("  'Events' = independent occurrences after dedup (the real sample size)")
+    p()
 
     # ── 2. Ranked headline table ───────────────────────────────────────────────
-    _bar()
-    print("  RANKED BY OVERALL 30d MEDIAN EXCESS RETURN")
-    _bar()
+    bar()
+    p("  RANKED BY OVERALL 30d MEDIAN EXCESS RETURN")
+    bar()
 
     rows = []
     for key, label, gap, _ in _CRITERIA:
         crosses = criterion_crosses[key]
-        rows.append(_overall_row(key, crosses))
+        n       = len(crosses)
+        med30, lo30, hi30, pos30, neg30 = _stats([r["excess_30"] for r in crosses])
+        med60, *_ = _stats([r["excess_60"] for r in crosses])
+        med90, *_ = _stats([r["excess_90"] for r in crosses])
+        rows.append((med30 or 0, label, n, med30, med60, med90, pos30, neg30))
 
     rows.sort(key=lambda r: r[0], reverse=True)
 
-    print(f"  {'Criterion':<30}  {'N':>4}  {'Med 30d':>8}  "
-          f"{'Med 60d':>8}  {'Med 90d':>8}  {'Pos/Neg':>9}")
-    _dash()
+    p(f"  {'Criterion':<30}  {'N':>4}  {'Med 30d':>8}  "
+      f"{'Med 60d':>8}  {'Med 90d':>8}  {'Pos/Neg':>9}")
+    dash()
     for _, label, n, med30, med60, med90, pos, neg in rows:
         flag = "  [!]" if n < _SMALL_N else ""
-        print(f"  {label:<30}  {n:>4}  {_pct(med30)}  "
-              f"{_pct(med60)}  {_pct(med90)}  {pos:>3}/{neg:<3}{flag}")
+        p(f"  {label:<30}  {n:>4}  {_pct(med30)}  "
+          f"{_pct(med60)}  {_pct(med90)}  {pos:>3}/{neg:<3}{flag}")
 
-    print()
-    print("  [!] = N < 5 in overall sample — treat all figures with extreme caution")
-    print()
+    p()
+    p("  [!] = N < 5 in overall sample — treat all figures with extreme caution")
+    p()
 
-    # ── 3. Per-criterion detail ────────────────────────────────────────────────
-    _bar()
-    print("  PER-CRITERION DETAIL — ERA BREAKDOWN")
-    _bar()
+    # ── 3. Per-criterion era detail ────────────────────────────────────────────
+    bar()
+    p("  PER-CRITERION DETAIL — ERA BREAKDOWN")
+    bar()
 
     for _, label, n_overall, med30, med60, med90, pos30, neg30 in rows:
-        # find key from label
         key = next(k for k, (lbl, *_) in _KEY_TO_META.items() if lbl == label)
         _, gap, rationale = _KEY_TO_META[key]
         crosses = criterion_crosses[key]
         n = len(crosses)
 
-        print()
-        print(f"  {label}   (N={n} events, dedup gap >{gap}d)")
-        print(f"  Dedup rule: {rationale}")
-        _dash()
+        p()
+        p(f"  {label}   (N={n} events, dedup gap >{gap}d)")
+        p(f"  Dedup rule: {rationale}")
+        dash()
 
         if n == 0:
-            print("  No signal-days survived dedup — criterion never fired on AAPL in this period.")
+            p(f"  No signal-days survived dedup — criterion never fired on "
+              f"{ticker} in this period.")
             continue
 
         era_groups = {lbl: [] for lbl, _ in _ERAS}
@@ -275,57 +312,188 @@ def print_report(raw_records, all_signal_counts, excluded_end, n_total):
         for era_label, _ in _ERAS:
             era_crosses = era_groups[era_label]
             ne = len(era_crosses)
-            print(f"\n    {era_label}   N={ne}")
+            p(f"\n    {era_label}   N={ne}")
             if ne == 0:
-                print("      (no events in this era)")
+                p("      (no events in this era)")
                 continue
-            print(f"    {'Horizon':<8}  {'Median':>8}  {'Min':>8}  {'Max':>8}  {'Pos/Neg':>9}")
-            print(f"    {'─'*8}  {'─'*8}  {'─'*8}  {'─'*8}  {'─'*9}")
-            for hname, hkey in [("30d", "excess_30"), ("60d", "excess_60"), ("90d", "excess_90")]:
+            p(f"    {'Horizon':<8}  {'Median':>8}  {'Min':>8}  {'Max':>8}  {'Pos/Neg':>9}")
+            p(f"    {'─'*8}  {'─'*8}  {'─'*8}  {'─'*8}  {'─'*9}")
+            for hname, hkey in [("30d", "excess_30"), ("60d", "excess_60"),
+                                 ("90d", "excess_90")]:
                 vals = [r[hkey] for r in era_crosses]
                 med, lo, hi, pos, neg = _stats(vals)
-                print(f"    {hname:<8}  {_pct(med)}  {_pct(lo)}  {_pct(hi)}  "
-                      f"{pos:>3}/{neg:<3}")
+                p(f"    {hname:<8}  {_pct(med)}  {_pct(lo)}  {_pct(hi)}  "
+                  f"{pos:>3}/{neg:<3}")
             if ne < _SMALL_N:
-                print(f"\n    *** SAMPLE TOO SMALL (N={ne} < {_SMALL_N}) — "
-                      f"no conclusions from this era ***")
+                p(f"\n    *** SAMPLE TOO SMALL (N={ne} < {_SMALL_N}) — "
+                  f"no conclusions from this era ***")
 
-        # Overall for this criterion
-        print(f"\n    Overall   N={n}")
-        print(f"    {'Horizon':<8}  {'Median':>8}  {'Min':>8}  {'Max':>8}  {'Pos/Neg':>9}")
-        print(f"    {'─'*8}  {'─'*8}  {'─'*8}  {'─'*8}  {'─'*9}")
-        for hname, hkey in [("30d", "excess_30"), ("60d", "excess_60"), ("90d", "excess_90")]:
+        p(f"\n    Overall   N={n}")
+        p(f"    {'Horizon':<8}  {'Median':>8}  {'Min':>8}  {'Max':>8}  {'Pos/Neg':>9}")
+        p(f"    {'─'*8}  {'─'*8}  {'─'*8}  {'─'*8}  {'─'*9}")
+        for hname, hkey in [("30d", "excess_30"), ("60d", "excess_60"),
+                             ("90d", "excess_90")]:
             vals = [r[hkey] for r in crosses]
             med, lo, hi, pos, neg = _stats(vals)
-            print(f"    {hname:<8}  {_pct(med)}  {_pct(lo)}  {_pct(hi)}  {pos:>3}/{neg:<3}")
+            p(f"    {hname:<8}  {_pct(med)}  {_pct(lo)}  {_pct(hi)}  {pos:>3}/{neg:<3}")
         if n < _SMALL_N:
-            print(f"\n    *** OVERALL SAMPLE TOO SMALL (N={n} < {_SMALL_N}) ***")
+            p(f"\n    *** OVERALL SAMPLE TOO SMALL (N={n} < {_SMALL_N}) ***")
 
-    # ── 4. Closing caveat ──────────────────────────────────────────────────────
-    print()
-    _bar()
-    print("  CLOSING CAVEAT")
-    _bar()
-    print("  ONE stock (AAPL) — survivorship-selected from a portfolio already")
-    print("  known to have performed well over 20 years.")
-    print("  10 DETERMINISTIC criteria only — criteria 7 & 8 (AI-judged) excluded.")
-    print("  Sustained criteria (C1/C2/C3/C4/C11/C12) have very few independent")
-    print("  events by design — 'True for 3 years' counts as one event, not 756.")
-    print("  Small event counts mean the min/max spread dominates the median.")
-    print("  The ranking reflects ONE stock's history and may not generalize.")
-    print("  This is a machinery check and component inspection — NOT a verdict")
-    print("  on the Micha Method and NOT a recommendation to reweight criteria.")
-    _bar()
-    print()
+    p()
+
+
+# ── Cross-stock summary matrix ─────────────────────────────────────────────────
+
+def print_cross_stock_matrix(all_results, tickers, file=None):
+    """Rows = 10 criteria, cols = tickers, cell = 30d median excess return (N events)."""
+
+    def p(*args, **kw):
+        print(*args, file=file, **kw)
+
+    COL = 12   # chars per ticker column (content + padding)
+    LABEL_W = 22
+
+    total_w = LABEL_W + COL * len(tickers)
+
+    p()
+    p("=" * total_w)
+    p("  CROSS-STOCK SUMMARY MATRIX — 30d MEDIAN EXCESS RETURN")
+    p("  Per-stock only. NOT pooled across tickers (see closing caveat).")
+    p("  Cell: +X.X%(N)  where N = independent events after dedup")
+    p("=" * total_w)
+
+    # Header
+    hdr = f"  {'Criterion':<{LABEL_W - 2}}"
+    for t in tickers:
+        hdr += f"{t:^{COL}}"
+    p(hdr)
+    p("  " + "─" * (LABEL_W - 2 + COL * len(tickers)))
+
+    # Data rows
+    for key, label, gap, _ in _CRITERIA:
+        short_label = label[:LABEL_W - 2]
+        row = f"  {short_label:<{LABEL_W - 2}}"
+        for ticker in tickers:
+            if ticker not in all_results:
+                cell = "—"
+            else:
+                raw_records = all_results[ticker][0]
+                crosses = dedup(raw_records[key], gap)
+                n = len(crosses)
+                if n == 0:
+                    cell = "—(0)"
+                else:
+                    med, *_ = _stats([r["excess_30"] for r in crosses])
+                    cell = f"{med * 100:+.1f}%({n})" if med is not None else "N/A"
+            row += f"{cell:^{COL}}"
+        p(row)
+
+    # History spans
+    p()
+    p("  History spans per ticker:")
+    for ticker in tickers:
+        if ticker not in all_results:
+            continue
+        _, _, _, _, first_date, last_date = all_results[ticker]
+        if first_date and last_date:
+            yrs = (last_date - first_date).days / 365.25
+            flag = "  *** SHORT HISTORY ***" if yrs < _SHORT_HISTORY_YEARS else ""
+            p(f"    {ticker:<6}: {first_date} → {last_date} ({yrs:.1f}yr){flag}")
+    p()
+
+
+# ── Closing caveat ─────────────────────────────────────────────────────────────
+
+def _print_closing_caveat(tickers, short_history_tickers, file=None):
+
+    def p(*args, **kw):
+        print(*args, file=file, **kw)
+
+    W_C = 72
+    p("=" * W_C)
+    p("  CLOSING CAVEAT")
+    p("=" * W_C)
+    p("  Results are PER-STOCK — NOT pooled across tickers (by design).")
+    p("  These 8 stocks are highly correlated (large-cap US tech + semis).")
+    p("  Pooling across them would inflate apparent N and create false")
+    p("  confidence that is not supported by truly independent observations.")
+    p("  Cross-stock comparison is deliberately left to the human reader.")
+    p()
+    p("  All 8 tickers are SURVIVORSHIP-SELECTED — known portfolio members")
+    p("  that have already performed well. Results are not representative")
+    p("  of the broader stock universe.")
+    p()
+    p("  10 DETERMINISTIC criteria only — criteria 7 & 8 (AI-judged) excluded.")
+    if short_history_tickers:
+        p()
+        p(f"  SHORT HISTORY: {', '.join(short_history_tickers)}")
+        p("  These tickers have fewer years of data; era samples are smaller.")
+    p()
+    p("  Sustained criteria (C1/C2/C3/C4/C11/C12) produce very few independent")
+    p("  events by design — 'True for 3 years' counts as one event, not 756.")
+    p("  Small event counts mean min/max spread dominates the median.")
+    p()
+    p("  This is a first look at signal behavior across the portfolio names.")
+    p("  It is NOT a verdict on the Micha Method and NOT a recommendation")
+    p("  to reweight criteria or adjust the portfolio.")
+    p("=" * W_C)
+    p()
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
     import truststore
     sys.stdout.reconfigure(encoding="utf-8")
     truststore.inject_into_ssl()
 
-    raw_records, all_signal_counts, excluded_end, n_total = run_all_criteria("AAPL", years=20)
-    print_report(raw_records, all_signal_counts, excluded_end, n_total)
+    tickers = _load_portfolio()
+
+    print(f"\nRunning walk-forward backtest for {len(tickers)} tickers: "
+          f"{', '.join(tickers)}")
+    print("Each ticker scans ~20yr of daily data. This takes several minutes.\n")
+
+    all_results = {}
+    for ticker in tickers:
+        print(f"\n{'#' * 70}")
+        print(f"#  {ticker}")
+        print(f"{'#' * 70}")
+        all_results[ticker] = run_all_criteria(ticker, years=20)
+
+    # Identify short-history tickers
+    short_history = [
+        t for t in tickers
+        if t in all_results
+        and all_results[t][4] is not None
+        and all_results[t][5] is not None
+        and (all_results[t][5] - all_results[t][4]).days / 365.25 < _SHORT_HISTORY_YEARS
+    ]
+
+    # ── Terminal: cross-stock matrix + caveat ──────────────────────────────────
+    print_cross_stock_matrix(all_results, tickers, file=None)
+    _print_closing_caveat(tickers, short_history, file=None)
+
+    # ── File: full per-stock detail + matrix + caveat ──────────────────────────
+    report_path = Path(__file__).parent / "backtest_report.txt"
+    print(f"Writing full detail report to {report_path.name} ...")
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write("MICHA METHOD BACKTEST — ALL 8 PORTFOLIO TICKERS\n")
+        f.write("Per-stock only. NOT pooled. Descriptive only.\n")
+        f.write(f"Generated: {date.today()}\n")
+        f.write("=" * 70 + "\n\n")
+
+        for ticker in tickers:
+            if ticker not in all_results:
+                continue
+            raw_records, signal_counts, excluded_end, n_total, first_date, last_date = \
+                all_results[ticker]
+            print_report(raw_records, signal_counts, excluded_end, n_total,
+                         ticker=ticker, first_date=first_date, last_date=last_date,
+                         file=f)
+            f.write("\n\n")
+
+        print_cross_stock_matrix(all_results, tickers, file=f)
+        _print_closing_caveat(tickers, short_history, file=f)
+
+    print(f"Done. Full report saved to {report_path.name}")
