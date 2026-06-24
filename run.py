@@ -70,6 +70,14 @@ def run_daily_analysis():
 if __name__ == "__main__":
     results = run_daily_analysis()
 
+    # Save today's Micha scores to history (before report build, so history is fresh)
+    import datetime as _dt
+    from history_manager import save_scores
+    _today = _dt.date.today().strftime("%Y-%m-%d")
+    _scores = {r["ticker"]: r["micha_score"] for r in results["portfolio"] + results["suggestions"]}
+    save_scores(_today, _scores)
+    print(f"Score history saved ({len(_scores)} tickers).")
+
     print("\n" + "=" * 50)
     print("PORTFOLIO SUMMARY")
     print("=" * 50)

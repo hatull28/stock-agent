@@ -103,6 +103,44 @@ def _sparkline_points(r):
     return [p for p in pts if p is not None]
 
 
+def _score_sparkline_svg(history, action_cls):
+    """Render a tiny SVG polyline of 7-day Micha score history. Returns '' if < 2 points."""
+    if len(history) < 2:
+        return ""
+    scores = [e["score"] for e in history]
+    w, h, m = 72, 24, 2
+    lo, hi = min(scores), max(scores)
+    n = len(scores)
+    pts = []
+    for i, s in enumerate(scores):
+        x = m + i * (w - 2 * m) / max(n - 1, 1)
+        y = (h - m) if lo == hi else (h - m - (s - lo) / (hi - lo) * (h - 2 * m))
+        pts.append(f"{x:.1f},{y:.1f}")
+    color_cls = {"go": "spark-go", "hold": "spark-hold", "stop": "spark-stop"}.get(action_cls, "spark-neutral")
+    return (
+        f'<svg class="score-spark {color_cls}" width="{w}" height="{h}" '
+        f'viewBox="0 0 {w} {h}" aria-hidden="true">'
+        f'<polyline points="{" ".join(pts)}" fill="none" stroke="currentColor" '
+        f'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'</svg>'
+    )
+
+
+def _trend_arrow(history, action_cls):
+    """Return a styled ↑/↓/→ span based on score delta vs 3 days ago. '' if < 3 points."""
+    if len(history) < 3:
+        return ""
+    delta = history[-1]["score"] - history[-3]["score"]
+    if delta >= 2:
+        arrow, cls = "↑", "up"
+    elif delta <= -2:
+        arrow, cls = "↓", "down"
+    else:
+        arrow, cls = "→", "flat"
+    color_cls = {"go": "spark-go", "hold": "spark-hold", "stop": "spark-stop"}.get(action_cls, "spark-neutral")
+    return f'<span class="trend-arrow trend-arrow--{cls} {color_cls}">{arrow}</span>'
+
+
 def _fmt_briefing(text):
     import re
     if not text:
@@ -254,6 +292,7 @@ def _stock_card(r):
     rev_g = r.get("revenue_growth")
     margin = r.get("profit_margin")
     buy_zone = r.get("buy_zone")
+    history = r.get("score_history", [])
     stats_parts = []
     if pe is not None:
         stats_parts.append(f"P/E {pe:.1f}x")
@@ -273,6 +312,9 @@ def _stock_card(r):
                 buy_html = f'<span class="buy-zone-badge" title="Stock extended — pullback target">Pullback ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
             else:
                 buy_html = f'<span class="buy-zone-badge">Buy ${bz_low:.0f}&#8211;${bz_high:.0f}</span>'
+    spark_svg = _score_sparkline_svg(history, cls)
+    arrow_html = _trend_arrow(history, cls)
+    score_history_row = f'<div class="score-history-row">{spark_svg}</div>' if spark_svg else ""
     return (
         f'<article class="card card--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
         f'role="button" tabindex="0">'
@@ -290,11 +332,12 @@ def _stock_card(r):
         f'<div class="card-bars">'
         f'<div class="score-row"><span class="score-label">MICHA</span>'
         f'<div class="score-track"><div class="score-fill score-fill--tech" style="width:{_bar(micha,12)}%"></div></div>'
-        f'<span class="score-val">{micha}/12</span></div>'
+        f'<span class="score-val">{micha}/12</span>{arrow_html}</div>'
         f'<div class="score-row"><span class="score-label">PETER</span>'
         f'<div class="score-track"><div class="score-fill score-fill--fund" style="width:{_bar(peter,10)}%"></div></div>'
         f'<span class="score-val">{peter_display}/10</span></div>'
         f'</div>'
+        f'{score_history_row}'
         f'{stats_block}'
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
@@ -326,6 +369,7 @@ def _suggestion_card(r):
     pe = r.get("pe_ratio")
     rev_g = r.get("revenue_growth")
     margin = r.get("profit_margin")
+    history = r.get("score_history", [])
     stats_parts = []
     if pe is not None:
         stats_parts.append(f"P/E {pe:.1f}x")
@@ -335,6 +379,9 @@ def _suggestion_card(r):
         stats_parts.append(f"Margin {margin*100:.0f}%")
     stats_html = "".join(f'<span class="stat-item">{_esc(s)}</span>' for s in stats_parts[:3])
     stats_block = f'<div class="card-stats">{stats_html}</div>' if stats_html else ""
+    spark_svg = _score_sparkline_svg(history, cls)
+    arrow_html = _trend_arrow(history, cls)
+    score_history_row = f'<div class="score-history-row">{spark_svg}</div>' if spark_svg else ""
     return (
         f'<article class="sug-card card--{cls}" onclick="openPanel(\'{_esc(ticker)}\')" '
         f'role="button" tabindex="0">'
@@ -351,11 +398,12 @@ def _suggestion_card(r):
         f'<div class="card-bars">'
         f'<div class="score-row"><span class="score-label">MICHA</span>'
         f'<div class="score-track"><div class="score-fill score-fill--tech" style="width:{_bar(micha,12)}%"></div></div>'
-        f'<span class="score-val">{micha}/12</span></div>'
+        f'<span class="score-val">{micha}/12</span>{arrow_html}</div>'
         f'<div class="score-row"><span class="score-label">PETER</span>'
         f'<div class="score-track"><div class="score-fill score-fill--fund" style="width:{_bar(peter,10)}%"></div></div>'
         f'<span class="score-val">{peter_display}/10</span></div>'
         f'</div>'
+        f'{score_history_row}'
         f'{stats_block}'
         f'<div class="card-meta">'
         f'<span class="cycle-badge cycle-badge--{_cycle_class(stage)}">{_esc(stage)}</span>'
@@ -1597,6 +1645,27 @@ body {
   line-height: 1.45;
 }
 
+/* ── Score history sparkline & trend arrow ─────────────────────────────────── */
+.score-history-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+.score-spark { display: block; flex-shrink: 0; }
+.spark-go      { color: var(--go);      }
+.spark-hold    { color: var(--hold);    }
+.spark-stop    { color: var(--stop);    }
+.spark-neutral { color: var(--neutral); }
+.trend-arrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.trend-arrow--flat { color: var(--ink-dim) !important; }
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 1000px) {
   .briefing-layout { grid-template-columns: 1fr; }
@@ -2365,6 +2434,10 @@ def _js(stocks_json, portfolio_count):
 def build_report(portfolio_results, suggestions, newspaper_text,
                  out_path="daily_report.html"):
     """Build the full HTML report and write it to out_path."""
+    from history_manager import load_history
+    for r in portfolio_results + suggestions:
+        r["score_history"] = load_history(r.get("ticker", ""))
+
     now = datetime.now()
     date_long = now.strftime("%A, %B %d, %Y").upper()
 
