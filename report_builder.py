@@ -103,6 +103,30 @@ def _sparkline_points(r):
     return [p for p in pts if p is not None]
 
 
+def _masthead_hero_html(image_data):
+    """Return the hero image block for the masthead, or '' if no image available."""
+    if not image_data:
+        return ""
+    url = image_data.get("url", "")
+    photographer = image_data.get("photographer", "")
+    profile_url = image_data.get("profile_url", "")
+    if not url:
+        return ""
+    unsplash_ref = "https://unsplash.com?utm_source=the_wire&utm_medium=referral"
+    credit = (
+        f'<p class="masthead-hero-credit">'
+        f'Photo: <a href="{_esc(profile_url)}" target="_blank" rel="noopener">{_esc(photographer)}</a>'
+        f' / <a href="{_esc(unsplash_ref)}" target="_blank" rel="noopener">Unsplash</a>'
+        f'</p>'
+    ) if photographer and profile_url else ""
+    return (
+        f'<div class="masthead-hero">'
+        f'<img src="{_esc(url)}" alt="Daily market scene" loading="lazy">'
+        f'{credit}'
+        f'</div>'
+    )
+
+
 def _score_sparkline_svg(history, action_cls):
     """Render a tiny SVG polyline of 7-day Micha score history. Returns '' if < 2 points."""
     if len(history) < 2:
@@ -1645,6 +1669,46 @@ body {
   line-height: 1.45;
 }
 
+/* ── Masthead hero image ─────────────────────────────────────────────────────── */
+.masthead-hero {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-top: 3px solid var(--rule);
+  border-bottom: 3px solid var(--rule);
+  margin-bottom: 0;
+}
+.masthead-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  display: block;
+  filter: grayscale(20%) contrast(1.06) brightness(0.9);
+  transition: filter 0.3s;
+}
+[data-theme="dark"] .masthead-hero img {
+  filter: grayscale(40%) contrast(1.1) brightness(0.55);
+}
+.masthead-hero-credit {
+  position: absolute;
+  bottom: 0.45rem;
+  right: 0.7rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.54rem;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.65);
+  line-height: 1.4;
+}
+.masthead-hero-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.9;
+}
+
 /* ── Score history sparkline & trend arrow ─────────────────────────────────── */
 .score-history-row {
   display: flex;
@@ -2438,6 +2502,13 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     for r in portfolio_results + suggestions:
         r["score_history"] = load_history(r.get("ticker", ""))
 
+    try:
+        from unsplash_layer import get_masthead_image
+        _image_data = get_masthead_image()
+    except Exception:
+        _image_data = None
+    hero_html = _masthead_hero_html(_image_data)
+
     now = datetime.now()
     date_long = now.strftime("%A, %B %d, %Y").upper()
 
@@ -2531,7 +2602,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
       <span class="edition-vol">Vol. 1</span>
     </div>
   </header>
-
+{hero_html}
   <div class="signals-strip">
 {signals_html}
   </div>

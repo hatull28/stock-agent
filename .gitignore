@@ -3,3 +3,4 @@ venv/
 __pycache__/
 daily_report.txt
 score_history.json
+masthead_cache.json
