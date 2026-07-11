@@ -23,7 +23,7 @@ def save_scores(date_str, scores_dict):
     for ticker, score in scores_dict.items():
         entries = data.get(ticker, [])
         entries = [e for e in entries if e["date"] != date_str]
-        entries.append({"date": date_str, "score": int(score)})
+        entries.append({"date": date_str, "score": int(score), "method": "blind"})
         data[ticker] = entries[-_MAX_ENTRIES:]
 
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:

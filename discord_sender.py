@@ -1,3 +1,4 @@
+import hashlib
 import os
 import requests
 from dotenv import load_dotenv
@@ -38,8 +39,21 @@ def mood_color(portfolio_results):
     return 0xe74c3c       # red
 
 
-def send_briefing(portfolio_results, suggestions, report_url=None):
-    """Send the daily briefing as a rich Discord embed."""
+_ACTION_SHORT = {
+    "BUY NOW":          "BUY",
+    "WAIT FOR PULLBACK": "WAIT",
+    "ACCUMULATE":       "ACCU",
+    "AVOID":            "AVOID",
+}
+
+
+def send_briefing(portfolio_results, suggestions, report_url=None, run_ts=None):
+    """Send the daily briefing as a rich Discord embed.
+
+    run_ts: ISO 8601 UTC string from the ledger (e.g. "2026-07-11T08:23:41Z").
+    If None, falls back to the current UTC time. Used in the footer as an
+    external timestamp that Discord independently records.
+    """
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
 
     def _price_str(r):
@@ -60,11 +74,12 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
         emoji = action_emoji(action)
         micha_bar = score_bar(r["micha_score"], 12)
         peter_bar = score_bar(r["peter_score"] or 0, 10)
+        badge = _ACTION_SHORT.get(action, action[:4])
         portfolio_lines.append(
             f"{emoji} **{r['ticker']}**  "
             f"T:`{micha_bar}` {r['micha_score']}/12  "
             f"F:`{peter_bar}` {r['peter_score']}/10"
-            f"{_price_str(r)}"
+            f"{_price_str(r)}  [{badge}]"
         )
     portfolio_text = "\n".join(portfolio_lines)
 
@@ -73,12 +88,25 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
     for r in suggestions:
         action = r["verdict"]["action"] if r["verdict"] else "?"
         emoji = action_emoji(action)
+        badge = _ACTION_SHORT.get(action, action[:4])
         suggestion_lines.append(
             f"{emoji} **{r['ticker']}** ({r['sector']})  "
             f"T: {r['micha_score']}/12  F: {r['peter_score']}/10"
-            f"{_price_str(r)}"
+            f"{_price_str(r)}  [{badge}]"
         )
     suggestion_text = "\n".join(suggestion_lines)
+
+    # run digest — SHA-256 of sorted ticker:hash pairs, first 12 hex chars.
+    # provides an external tamper-evident fingerprint for this run's predictions.
+    all_results = portfolio_results + suggestions
+    _digest_src = "|".join(
+        f"{r['ticker']}:{r.get('profile_hash', '')}"
+        for r in sorted(all_results, key=lambda x: x["ticker"])
+    )
+    run_digest = hashlib.sha256(_digest_src.encode()).hexdigest()[:12]
+
+    from datetime import datetime, timezone
+    _ts = run_ts or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
 
     # assemble the embed
     embed = {
@@ -93,7 +121,7 @@ def send_briefing(portfolio_results, suggestions, report_url=None):
              "value": "[Open The Wire →](https://hatull28.github.io/stock-agent/daily_report.html)",
              "inline": False},
         ],
-        "footer": {"text": "Analysis, not financial advice"},
+        "footer": {"text": f"Analysis, not financial advice · {_ts} · digest:{run_digest}"},
     }
 
     if report_url:

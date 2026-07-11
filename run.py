@@ -70,13 +70,21 @@ def run_daily_analysis():
 if __name__ == "__main__":
     results = run_daily_analysis()
 
-    # Save today's Micha scores to history (before report build, so history is fresh)
+    # Compute run_ts once — ledger and Discord use the same timestamp.
     import datetime as _dt
     from history_manager import save_scores
-    _today = _dt.date.today().strftime("%Y-%m-%d")
-    _scores = {r["ticker"]: r["micha_score"] for r in results["portfolio"] + results["suggestions"]}
+    from ledger import append_run
+    _now   = _dt.datetime.now(_dt.timezone.utc)
+    run_ts = _now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    _today = _now.strftime("%Y-%m-%d")
+
+    _all_results = results["portfolio"] + results["suggestions"]
+    _scores = {r["ticker"]: r["micha_score"] for r in _all_results}
     save_scores(_today, _scores)
     print(f"Score history saved ({len(_scores)} tickers).")
+
+    append_run(_all_results, run_ts=run_ts)
+    print(f"Prediction ledger written ({len(_all_results)} entries).")
 
     print("\n" + "=" * 50)
     print("PORTFOLIO SUMMARY")
@@ -108,13 +116,13 @@ if __name__ == "__main__":
 
     # === send summary to Discord ===
     from discord_sender import send_briefing
-    ok = send_briefing(results["portfolio"], results["suggestions"])
+    ok = send_briefing(results["portfolio"], results["suggestions"], run_ts=run_ts)
     print("Sent to Discord!" if ok else "Discord send failed.")
 
     # === push report to git ===
     import subprocess, datetime
     date_str = datetime.date.today().strftime("%Y-%m-%d")
-    subprocess.run(["git", "add", "daily_report.html"], check=True)
+    subprocess.run(["git", "add", "daily_report.html", "research_data.json"], check=True)
     subprocess.run(["git", "commit", "-m", f"Daily report update {date_str}"], check=True)
     subprocess.run(["git", "push"], check=True)
     print("Report pushed to git.")
