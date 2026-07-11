@@ -29,12 +29,24 @@ def summarize_recent_action(data, days=40):
 
 
 def judge_breakout_and_retest(ticker, data):
-    """Ask the AI to judge Micha criteria 7 (breakout) and 8 (retest)."""
+    """Ask the AI to judge Micha criteria 7 (breakout) and 8 (retest).
 
-    price_table = summarize_recent_action(data)
+    The prompt is anonymized: no ticker symbol, no calendar dates, no absolute prices.
+    OHLC values are indexed to Day 1 Close = 100.00; volume is expressed as a ratio
+    of the 40-day mean. This prevents the model from pattern-matching against its
+    training-data memory of what a specific stock did on a specific date.
+    """
+    from blind_profiler import build_blind_profile, format_profile_table
+
+    profile = build_blind_profile(data)
+    price_table = format_profile_table(profile["rows"])
 
     prompt = f"""You are a strict technical analyst applying the Micha Method.
-Analyze the last 40 trading days of {ticker} below.
+Analyze the following 40 trading days of an anonymous equity.
+
+Encoding:
+- Day 1 Close = 100.00. All O/H/L/C values are percentages of that anchor.
+- V_ratio = each day's volume divided by the mean volume over the 40-day window.
 
 Judge exactly two criteria:
 - Criterion 7 (Breakout quality): Did the stock make a CLEAN breakout above a
@@ -66,7 +78,6 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
     # strip markdown code fences if present
     cleaned = raw.strip()
     if cleaned.startswith("```"):
-        # remove the opening fence (```json or ```) and closing fence
         cleaned = cleaned.split("```")[1]
         if cleaned.startswith("json"):
             cleaned = cleaned[4:]
@@ -78,10 +89,10 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
     except json.JSONDecodeError:
         print(f"  WARNING: could not parse AI response for {ticker}, retrying...")
         retry_prompt = (
-            f"Return ONLY this JSON for {ticker}, no other text:\n"
-            f'{{"criterion_7_breakout":{{"pass":true,"reason":"one sentence"}},'
-            f'"criterion_8_retest":{{"pass":false,"reason":"one sentence"}}}}\n\n'
-            f"Use the price data you already know. Was there a clean breakout? Was there a successful retest?"
+            "Return ONLY this JSON, no other text:\n"
+            '{"criterion_7_breakout":{"pass":true,"reason":"one sentence"},'
+            '"criterion_8_retest":{"pass":false,"reason":"one sentence"}}\n\n'
+            "Use the price data provided. Was there a clean breakout? Was there a successful retest?"
         )
         retry_resp = client.chat.completions.create(
             model=MODEL,
@@ -102,7 +113,8 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
             parsed = json.loads(retry_raw)
         except json.JSONDecodeError:
             print(f"  WARNING: retry also failed for {ticker}, defaulting both to FAIL")
-            return {"7_breakout_quality": False, "8_retest_quality": False}
+            return {"7_breakout_quality": False, "8_retest_quality": False,
+                    "_profile_hash": profile["profile_hash"]}
 
     # convert to the same simple format as our other criteria
     return {
@@ -112,6 +124,7 @@ Respond ONLY with valid JSON, no other text, in exactly this format:
             "7": parsed["criterion_7_breakout"]["reason"],
             "8": parsed["criterion_8_retest"]["reason"],
         },
+        "_profile_hash": profile["profile_hash"],
     }
 def peter_lynch_score(ticker, fundamentals):
     """Ask the AI to score the 10 Peter Lynch criteria (1-10 each) from real data."""

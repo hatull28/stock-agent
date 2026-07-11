@@ -218,7 +218,8 @@ def full_micha_analysis(ticker, data, benchmark_data):
 
     # AI-based criteria (7 & 8)
     ai_part = judge_breakout_and_retest(ticker, data)
-    reasons = ai_part.pop("_reasons", {})   # pull reasons out separately
+    reasons = ai_part.pop("_reasons", {})
+    profile_hash = ai_part.pop("_profile_hash", None)
 
     # merge everything into one dict
     all_criteria = {**part1, **part2, **ai_part}
@@ -230,6 +231,7 @@ def full_micha_analysis(ticker, data, benchmark_data):
         "score": score,
         "criteria": all_criteria,
         "ai_reasons": reasons,
+        "profile_hash": profile_hash,   # SHA-256 of the anonymized input; wired for next commit
     }
 # --- test it ---
 if __name__ == "__main__":
@@ -343,4 +345,5 @@ def analyze_stock(ticker, benchmark_data, etf_returns=None):
         "sector_etf":            sector_etf,
         "sector_vs_etf":         sector_vs_etf,
         "close_60d":             [round(float(p), 2) for p in data["Close"].iloc[-60:].dropna()],
+        "profile_hash":          micha.get("profile_hash"),
     }
