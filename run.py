@@ -5,7 +5,7 @@ truststore.inject_into_ssl()
 
 from data import get_price_history
 from fundamentals import get_fundamentals
-from config import PORTFOLIO, BENCHMARK
+from config import PORTFOLIO, WATCHLIST, BENCHMARK
 from analysis import analyze_stock, fetch_etf_returns
 from ai_layer import propose_diversifiers
 
@@ -60,9 +60,24 @@ def run_daily_analysis():
     suggestion_results.sort(key=combined, reverse=True)
     top_suggestions = suggestion_results[:3]   # best 3
 
+    # === PART D: analyze the watchlist ===
+    print("\n=== ANALYZING WATCHLIST ===")
+    watchlist_results = []
+    for ticker in WATCHLIST:
+        if ticker in PORTFOLIO:
+            print(f"  skipping {ticker} (already held in portfolio)")
+            continue
+        print(f"  analyzing {ticker}...")
+        try:
+            result = analyze_stock(ticker, benchmark_data, etf_returns)
+            watchlist_results.append(result)
+        except Exception as e:
+            print(f"  ERROR on {ticker}: {e}")
+
     return {
-        "portfolio": portfolio_results,
+        "portfolio":   portfolio_results,
         "suggestions": top_suggestions,
+        "watchlist":   watchlist_results,
     }
 
 
@@ -78,7 +93,13 @@ if __name__ == "__main__":
     run_ts = _now.strftime("%Y-%m-%dT%H:%M:%SZ")
     _today = _now.strftime("%Y-%m-%d")
 
-    _all_results = results["portfolio"] + results["suggestions"]
+    # Tag held status before ledger write so research_data.json records provenance.
+    for r in results["portfolio"]:
+        r["_held"] = True
+    for r in results["watchlist"] + results["suggestions"]:
+        r["_held"] = False
+
+    _all_results = results["portfolio"] + results["watchlist"] + results["suggestions"]
     _scores = {r["ticker"]: r["micha_score"] for r in _all_results}
     save_scores(_today, _scores)
     print(f"Score history saved ({len(_scores)} tickers).")
@@ -107,11 +128,13 @@ if __name__ == "__main__":
     print("WRITING BRIEFING & BUILDING REPORT...")
     print("=" * 50)
     from ai_layer import write_newspaper
-    newspaper = write_newspaper(results["portfolio"], results["suggestions"])
+    newspaper = write_newspaper(results["portfolio"], results["suggestions"],
+                                results["watchlist"])
 
     # === build the HTML report ===
     from report_builder import build_report
-    report_path = build_report(results["portfolio"], results["suggestions"], newspaper)
+    report_path = build_report(results["portfolio"], results["suggestions"], newspaper,
+                               watchlist_results=results["watchlist"])
     print(f"Report built: {report_path}")
 
     # === send summary to Discord ===

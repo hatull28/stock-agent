@@ -1078,6 +1078,46 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* ── Config status nag ─────────────────────────────────────────────────────── */
+.config-status {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.55rem 1.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.4rem;
+  align-items: baseline;
+}
+.config-status--stale {
+  background: #fef3cd;
+  border-left: 3px solid #e6a817;
+  color: #7a4f00;
+}
+[data-theme="dark"] .config-status--stale {
+  background: #3a2a00;
+  border-left-color: #c8860a;
+  color: #f5c36d;
+}
+.config-status-header {
+  width: 100%;
+  font-size: 0.82rem;
+}
+.config-status-warning {
+  font-style: normal;
+}
+.config-status-body {
+  color: var(--ink-dim);
+}
+[data-theme="dark"] .config-status--stale .config-status-body {
+  color: #d4a44c;
+}
+.config-status-label {
+  font-weight: 600;
+}
+
 /* ── Panel overlay ─────────────────────────────────────────────────────────── */
 .panel-overlay {
   display: none;
@@ -2496,10 +2536,11 @@ def _js(stocks_json, portfolio_count):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def build_report(portfolio_results, suggestions, newspaper_text,
-                 out_path="daily_report.html"):
+                 watchlist_results=None, out_path="daily_report.html"):
     """Build the full HTML report and write it to out_path."""
+    watchlist_results = watchlist_results or []
     from history_manager import load_history
-    for r in portfolio_results + suggestions:
+    for r in portfolio_results + suggestions + watchlist_results:
         r["score_history"] = load_history(r.get("ticker", ""))
 
     try:
@@ -2508,6 +2549,16 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     except Exception:
         _image_data = None
     hero_html = _masthead_hero_html(_image_data)
+
+    # Staleness nag — detect when portfolio.json was last edited.
+    import time
+    from pathlib import Path
+    _cfg = Path(__file__).parent / "portfolio.json"
+    if _cfg.exists():
+        _days_stale = int((time.time() - _cfg.stat().st_mtime) / 86400)
+        _mtime_str  = datetime.fromtimestamp(_cfg.stat().st_mtime).strftime("%Y-%m-%d")
+    else:
+        _days_stale, _mtime_str = None, "unknown"
 
     now = datetime.now()
     date_long = now.strftime("%A, %B %d, %Y").upper()
@@ -2521,7 +2572,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     signal_str = f"{go_count}/{n_portfolio}"
 
     # Build JS data payload
-    all_stocks = portfolio_results + suggestions
+    all_stocks = portfolio_results + suggestions + watchlist_results
     stocks_payload = []
     for r in all_stocks:
         pl = r.get("price_levels") or {}
@@ -2565,7 +2616,28 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     briefing_html = _fmt_briefing(newspaper_text)
     portfolio_cards = "\n".join(_stock_card(r) for r in portfolio_results)
     suggestion_cards = "\n".join(_suggestion_card(r) for r in suggestions)
+    watchlist_cards  = "\n".join(_stock_card(r) for r in watchlist_results)
+    n_watchlist = len(watchlist_results)
     s_suffix = "s" if n_portfolio != 1 else ""
+
+    # Staleness nag box HTML
+    _portfolio_tickers = " &middot; ".join(_esc(r["ticker"]) for r in portfolio_results)
+    _watchlist_tickers = " &middot; ".join(_esc(r["ticker"]) for r in watchlist_results)
+    if _days_stale is not None and _days_stale >= 30:
+        _stale_class = "config-status config-status--stale"
+        _stale_header = f'<strong class="config-status-warning">&#9888; Portfolio config may be stale &mdash; last updated {_days_stale} days ago</strong>'
+    else:
+        _stale_class = "config-status"
+        _days_ago_str = f"{_days_stale} day{'s' if _days_stale != 1 else ''} ago" if _days_stale is not None else "unknown"
+        _stale_header = f'Config last updated: {_esc(_mtime_str)} ({_days_ago_str})'
+    config_status_html = f"""  <div class="{_stale_class}">
+    <div class="config-status-header">{_stale_header}</div>
+    <div class="config-status-body">
+      <span class="config-status-label">Holdings ({n_portfolio}):</span> {_portfolio_tickers}
+      &nbsp;&nbsp;
+      <span class="config-status-label">Watchlist ({n_watchlist}):</span> {_watchlist_tickers}
+    </div>
+  </div>"""
 
     html_doc = f"""<!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -2602,6 +2674,7 @@ def build_report(portfolio_results, suggestions, newspaper_text,
       <span class="edition-vol">Vol. 1</span>
     </div>
   </header>
+{config_status_html}
 {hero_html}
   <div class="signals-strip">
 {signals_html}
@@ -2646,6 +2719,18 @@ def build_report(portfolio_results, suggestions, newspaper_text,
     </div>
     <div class="suggest-grid">
 {suggestion_cards}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-rule">
+      <div class="section-rule-inner">
+        <span class="section-rule-label">Watchlist Dispatches</span>
+        <span class="section-rule-count">{n_watchlist} under consideration</span>
+      </div>
+    </div>
+    <div class="dispatch-grid">
+{watchlist_cards}
     </div>
   </section>
 

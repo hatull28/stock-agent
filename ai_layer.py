@@ -503,7 +503,7 @@ def _get_market_snapshot():
     return "\n".join(lines) if lines else "Market data unavailable."
 
 
-def write_newspaper(portfolio_results, suggestions):
+def write_newspaper(portfolio_results, suggestions, watchlist_results=None):
     """Turn all analysis results into a readable daily newspaper."""
     from datetime import datetime
     today = datetime.now()
@@ -552,6 +552,15 @@ def write_newspaper(portfolio_results, suggestions):
             f"Micha {r['micha_score']}/12, Peter {r['peter_score']}/10, "
             f"Action: {v.get('action','?')}. Why: {v.get('long_term','')}"
         )
+
+    if watchlist_results:
+        lines.append("\nWATCHLIST (under consideration, not yet held):")
+        for r in watchlist_results:
+            v = r["verdict"] or {}
+            lines.append(
+                f"- {r['ticker']} ({r['name']}): Micha {r['micha_score']}/12, "
+                f"Peter {r['peter_score']}/10, Action: {v.get('action','?')}."
+            )
 
     data_summary = "\n".join(lines)
 

@@ -225,6 +225,14 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
   adding/removing tickers
 - **Backtesting** — test the method against 1000 days of historical data
 - **VPS migration** — always-on hosting, eliminates Task Scheduler dependency
+- **Portfolio Sandbox** *(parked — open design questions unresolved)*
+  An interactive page, separate from the daily broadsheet, for testing how candidate
+  additions change the portfolio's shape. Toggle watchlist names on/off and see the effect
+  live. Open questions before building: (a) What does it measure? Sector weights are easy
+  and shallow; return correlation across holdings is honest and real work. (b) Where does
+  it live — a second generated HTML page, a section of the daily report, or opened on
+  demand? (c) What does "playable" mean concretely — client-side JS with pre-computed
+  data baked in at generation time? Do not build until these are answered.
 - **CLAUDE.md** — this file ✅
 
 ---
