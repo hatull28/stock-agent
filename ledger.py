@@ -4,6 +4,21 @@ from datetime import datetime, timezone
 LEDGER_FILE = "research_data.json"
 
 
+def _json_default(obj):
+    """Coerce numpy scalar types that json.dumps can't handle."""
+    try:
+        import numpy as np
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+    except ImportError:
+        pass
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+
 def _lynch_category(r):
     """Mirror the lynchSticker() JS function in report_builder.py:1921-1931."""
     rg, eg = r.get("revenue_growth"), r.get("earnings_growth")
@@ -62,6 +77,6 @@ def append_run(results, run_ts=None):
                 "held":           r.get("_held", False),
                 "action":         verdict.get("action"),
             }
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            f.write(json.dumps(entry, ensure_ascii=False, default=_json_default) + "\n")
 
     return run_ts
