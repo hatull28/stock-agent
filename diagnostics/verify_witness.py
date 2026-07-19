@@ -2,14 +2,23 @@
 verify_witness.py — Verify the prediction ledger against the Discord witness.
 
 The Discord embed footer carries a run timestamp and a 12-char SHA-256 digest,
-posted to a server we do not control. The digest fingerprints the ledger entries
-for that run. If research_data.json were edited after the fact, recomputing the
-digest from the ledger would no longer match what Discord recorded.
+posted to a server we do not control. If research_data.json were edited after
+the fact, recomputing the digest from the ledger would no longer match what
+Discord recorded.
 
-COVERAGE NOTE: the digest covers portfolio + suggestion entries only. Watchlist
-entries (held=false tickers that appear in WATCHLIST config) are excluded from
-the digest because send_briefing() does not receive them. The tool prints which
-tickers are covered and which are not, so a mismatch can be diagnosed precisely.
+ERA DETECTION
+The digest function expanded in one commit: before, it covered portfolio +
+suggestions (12 entries); after, it covers all 18 (portfolio + suggestions +
+watchlist). The verifier detects which era a run belongs to by checking whether
+any entry for that run carries a "source" field. The "source" field was added
+in the same commit that expanded the digest — so "has source" <-> "new era"
+is a genuine causal invariant, not a coincidence.
+
+  New-era run  (source present): digest covers all entries for the run_ts.
+  Legacy run   (no source)     : digest covered portfolio + suggestions only.
+                                 The split uses config.WATCHLIST to separate
+                                 suggestions from watchlist — this may produce
+                                 false alarms if the watchlist has changed since.
 
 Hardcode RUN_TS and EXPECTED_DIGEST below, then run:
   python diagnostics/verify_witness.py
@@ -29,18 +38,29 @@ EXPECTED_DIGEST = "6538ddd7199a"
 LEDGER_FILE = "research_data.json"
 
 
+def _print_pairs_and_string(digest_entries):
+    """Print sorted ticker:hash table and the full concatenated string."""
+    sorted_pairs = sorted(digest_entries, key=lambda x: x["ticker"])
+    print("Sorted ticker:hash pairs assembled for digest:")
+    for e in sorted_pairs:
+        h = e.get("profile_hash") or ""
+        print(f"  {e['ticker']:<6} : {h}")
+    print()
+    print("Full string hashed:")
+    for e in sorted_pairs:
+        print(f"  {e['ticker']}:{e.get('profile_hash', '')}")
+    print()
+    return sorted_pairs
+
+
 def main():
     print("=" * 70)
-    print(f"WITNESS VERIFICATION — {RUN_TS}")
+    print(f"WITNESS VERIFICATION -- {RUN_TS}")
     print("=" * 70)
     print()
 
-    # Import the canonical digest function — not a reimplementation.
+    # Import the canonical digest function -- not a reimplementation.
     from discord_sender import compute_run_digest
-
-    # Import WATCHLIST to distinguish suggestions from watchlist in held=false entries.
-    from config import WATCHLIST
-    watchlist_set = set(WATCHLIST)
 
     # Read ledger.
     if not os.path.exists(LEDGER_FILE):
@@ -56,7 +76,7 @@ def main():
             try:
                 all_entries.append(json.loads(line))
             except json.JSONDecodeError as e:
-                print(f"WARNING: line {lineno} is not valid JSON ({e}) — skipping")
+                print(f"WARNING: line {lineno} is not valid JSON ({e}) -- skipping")
 
     run_entries = [e for e in all_entries if e.get("run_ts") == RUN_TS]
 
@@ -69,48 +89,73 @@ def main():
             print(f"    {ts}  ({count} entries)")
         sys.exit(1)
 
-    # Split into portfolio / watchlist / suggestions.
-    portfolio   = [e for e in run_entries if e.get("held") is True]
-    non_held    = [e for e in run_entries if e.get("held") is not True]
-    watchlist   = [e for e in non_held if e["ticker"] in watchlist_set]
-    suggestions = [e for e in non_held if e["ticker"] not in watchlist_set]
+    # ── Era detection ─────────────────────────────────────────────────────────
+    # "source" field was added in the same commit that expanded digest coverage
+    # from 12 entries (portfolio+suggestions) to all 18 (all sources).
+    has_source = any("source" in e for e in run_entries)
 
-    port_tickers = sorted(e["ticker"] for e in portfolio)
-    sugg_tickers = sorted(e["ticker"] for e in suggestions)
-    wl_tickers   = sorted(e["ticker"] for e in watchlist)
+    if has_source:
+        # ── New-era path: source field present; digest covers all entries ──────
+        portfolio   = [e for e in run_entries if e.get("source") == "portfolio"]
+        watchlist   = [e for e in run_entries if e.get("source") == "watchlist"]
+        suggestions = [e for e in run_entries if e.get("source") == "suggestion"]
+        other       = [e for e in run_entries if e.get("source") not in
+                       ("portfolio", "watchlist", "suggestion")]
 
-    print(f"Ledger entries for this run_ts  : {len(run_entries)}")
-    print(f"Portfolio entries  (held=true)  : {len(portfolio):2d}  [{' '.join(port_tickers)}]")
-    print(f"Suggestion entries (held=false, not in WATCHLIST) : {len(suggestions):2d}  [{' '.join(sugg_tickers)}]")
-    print(f"Watchlist excluded (held=false, in WATCHLIST)     : {len(watchlist):2d}  [{' '.join(wl_tickers)}]")
-    print(f"  (note: watchlist is NOT covered by the Discord digest)")
+        digest_entries = portfolio + watchlist + suggestions + other
+        era_label = "new (source field present -- digest covers all entries)"
+        coverage_note = "ALL entries for this run are covered by the digest."
+
+        print(f"Era detected      : {era_label}")
+        print(f"Ledger entries    : {len(run_entries)}")
+        print(f"  portfolio       : {len(portfolio):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in portfolio))}]")
+        print(f"  watchlist       : {len(watchlist):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in watchlist))}]")
+        print(f"  suggestion      : {len(suggestions):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in suggestions))}]")
+        if other:
+            print(f"  unknown source  : {len(other):2d}  "
+                  f"[{' '.join(sorted(e['ticker'] for e in other))}]")
+        print(f"  {coverage_note}")
+
+    else:
+        # ── Legacy path: no source field; digest covered only portfolio+suggestions
+        print("Era detected      : legacy (no source field on any entry)")
+        print()
+        print("  WARNING: This run predates the source field. The split between")
+        print("  suggestions and watchlist is reconstructed using the current")
+        print("  config.WATCHLIST. If any ticker has been added to or removed from")
+        print("  the watchlist since this run, the reconstruction will be wrong and")
+        print("  a FAIL here does NOT necessarily mean tampering.")
+        print()
+
+        from config import WATCHLIST
+        watchlist_set = set(WATCHLIST)
+
+        portfolio   = [e for e in run_entries if e.get("held") is True]
+        non_held    = [e for e in run_entries if e.get("held") is not True]
+        watchlist   = [e for e in non_held if e["ticker"] in watchlist_set]
+        suggestions = [e for e in non_held if e["ticker"] not in watchlist_set]
+
+        digest_entries = portfolio + suggestions   # watchlist was NOT in digest
+
+        print(f"Ledger entries    : {len(run_entries)}")
+        print(f"  portfolio       : {len(portfolio):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in portfolio))}]")
+        print(f"  suggestion      : {len(suggestions):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in suggestions))}]")
+        print(f"  watchlist excl. : {len(watchlist):2d}  "
+              f"[{' '.join(sorted(e['ticker'] for e in watchlist))}]")
+        print(f"  (watchlist was NOT covered by the digest for legacy runs)")
+
     print()
-
-    # Assemble the digest entries — same set send_briefing() received at runtime.
-    digest_entries = portfolio + suggestions
 
     if not digest_entries:
-        print("ERROR: no portfolio or suggestion entries found — cannot compute digest.")
+        print("ERROR: no digest entries assembled -- cannot compute digest.")
         sys.exit(1)
 
-    # Show the sorted ticker:hash pairs exactly as they enter the hash function.
-    sorted_pairs = sorted(digest_entries, key=lambda x: x["ticker"])
-    print("Sorted ticker:hash pairs assembled for digest:")
-    for e in sorted_pairs:
-        h = e.get("profile_hash") or ""
-        print(f"  {e['ticker']:<6} : {h}")
-    print()
-
-    # Reconstruct the full string that gets hashed — same logic as compute_run_digest.
-    digest_src = "|".join(
-        f"{e['ticker']}:{e.get('profile_hash', '')}"
-        for e in sorted_pairs
-    )
-    print("Full string hashed:")
-    # Print in segments so it's readable without wrapping.
-    for pair in digest_src.split("|"):
-        print(f"  {pair}")
-    print()
+    _print_pairs_and_string(digest_entries)
 
     # Compute using the canonical function imported from discord_sender.
     recomputed = compute_run_digest(digest_entries)
@@ -120,25 +165,26 @@ def main():
     print()
 
     if recomputed == EXPECTED_DIGEST:
-        print("PASS — ledger matches Discord witness. No tampering detected.")
+        print("PASS -- ledger matches Discord witness. No tampering detected.")
     else:
-        print("FAIL — digest mismatch. Diagnosing...")
+        print("FAIL -- digest mismatch. Diagnosing...")
         print()
-        print("Likely causes (in order of probability):")
-        print("  1. Entry count mismatch: digest was computed from a different set of tickers.")
-        print(f"     Entries used here: {len(digest_entries)}  "
-              f"({len(portfolio)} portfolio + {len(suggestions)} suggestions)")
-        print("     If WATCHLIST changed since this run, suggestion/watchlist split may be wrong.")
-        print()
-        print("  2. profile_hash mismatch on a specific ticker:")
-        print("     One ticker's blind profile may have been re-run and the ledger updated.")
-        print("     Check each hash against any prior snapshot of the ledger.")
-        print()
-        print("  3. Formatting drift: separator or sort order changed in compute_run_digest().")
-        print("     The full string above is exactly what was hashed — compare to discord_sender.py.")
-        print()
-        print("  4. Actual tampering: a ticker:hash pair was edited in research_data.json.")
-        print("     Compare the hashes above to git history: git show HEAD:research_data.json")
+        if not has_source:
+            print("  This is a LEGACY run. Most likely cause: the WATCHLIST config")
+            print("  has changed since this run, so the suggestion/watchlist split is")
+            print("  wrong. Check what the watchlist looked like at run time (git log)")
+            print("  before concluding there was tampering.")
+            print()
+        print("  Other likely causes (new-era or after confirming WATCHLIST unchanged):")
+        print(f"  1. Entry count: {len(digest_entries)} entries used here. If the digest")
+        print("     was computed from a different count, the hash will not match.")
+        print("  2. profile_hash changed: one ticker's hash in the ledger differs from")
+        print("     what was hashed at runtime. Compare to git history:")
+        print("       git log --all --oneline -- research_data.json")
+        print("       git show <commit>:research_data.json | grep <ticker>")
+        print("  3. Formatting drift: separator or sort order changed in")
+        print("     compute_run_digest(). The full string above is exactly what was")
+        print("     hashed -- compare to discord_sender.py.")
         sys.exit(1)
 
 

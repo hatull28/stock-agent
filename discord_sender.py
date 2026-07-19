@@ -61,7 +61,8 @@ def compute_run_digest(results):
     return hashlib.sha256(digest_src.encode()).hexdigest()[:12]
 
 
-def send_briefing(portfolio_results, suggestions, report_url=None, run_ts=None):
+def send_briefing(portfolio_results, suggestions, watchlist_results=None,
+                  report_url=None, run_ts=None):
     """Send the daily briefing as a rich Discord embed.
 
     run_ts: ISO 8601 UTC string from the ledger (e.g. "2026-07-11T08:23:41Z").
@@ -110,9 +111,10 @@ def send_briefing(portfolio_results, suggestions, report_url=None, run_ts=None):
         )
     suggestion_text = "\n".join(suggestion_lines)
 
-    # run digest — fingerprints portfolio + suggestions (the set this function receives).
-    # watchlist is not passed here and therefore not covered by the digest.
-    run_digest = compute_run_digest(portfolio_results + suggestions)
+    # run digest — fingerprints all 18 entries: portfolio + suggestions + watchlist.
+    run_digest = compute_run_digest(
+        portfolio_results + suggestions + (watchlist_results or [])
+    )
 
     from datetime import datetime, timezone
     _ts = run_ts or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")

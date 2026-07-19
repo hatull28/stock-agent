@@ -211,11 +211,20 @@ Key fields per entry:
 - `peter_score`, `peter_scores` — Lynch aggregate + per-criterion breakdown
 - `lynch_category` — deterministic label (Hidden Gem / Fast Grower / Stalwart / etc.)
 - `held` — `true` if ticker is in PORTFOLIO at run time, `false` if watchlist or suggestion
+- `source` — `"portfolio"` / `"watchlist"` / `"suggestion"`; absent on pre-source-field entries (legacy)
 - `action` — final combined verdict
 
-The `held` field enables forward-test queries: `filter where held=false` gives pre-purchase
-predictions uncontaminated by anchoring. A ticker moving from watchlist → portfolio produces
-a clean era split in the ledger with a date boundary.
+`held` and `source` answer different forward-test questions. `held` is the simple pre-purchase
+vs held split. `source` separates watchlist (stocks you chose to watch) from suggestions (stocks
+the AI proposed) — these are different bets and the forward test should tell them apart.
+
+A ticker moving from watchlist → portfolio produces a clean era split: `held=false, source="watchlist"`
+entries are pre-purchase predictions uncontaminated by anchoring; `held=true, source="portfolio"`
+entries begin when capital is committed.
+
+**Digest coverage:** The Discord digest fingerprints all entries for a run. `verify_witness.py`
+detects the era automatically: if any entry has `source`, all entries are in the digest (new era);
+if no entry has `source`, only portfolio + suggestions were covered (legacy era, with a warning).
 
 ---
 
@@ -274,15 +283,18 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
   if >30 days stale
 - **portfolio.json config** — portfolio and watchlist editable without touching code
 - **Unsplash daily masthead image** — fresh photo fetched each run via `unsplash_layer.py`
-- **Score history** — daily Micha scores saved to `score_history.json` (30-entry rolling cap
-  per ticker, method: "blind"); loaded into report for all portfolio + watchlist + suggestion tickers
+- **Score history + sparklines** — daily Micha scores saved to `score_history.json` (30-entry
+  rolling cap per ticker, method: "blind"); 7-day SVG polyline sparklines and ↑↓→ trend arrows
+  render on every stock card (`_score_sparkline_svg()` / `_trend_arrow()` in report_builder.py)
+- **`source` field on ledger entries** — `"portfolio"` / `"watchlist"` / `"suggestion"` on every
+  entry; enables forward-test queries that separate watched stocks from AI-proposed stocks
+- **Full digest coverage** — Discord digest now fingerprints all 18 entries per run (portfolio +
+  suggestions + watchlist); `verify_witness.py` auto-detects era via `source` field presence
 
 ---
 
 ## What's still to build 🔲
 
-- **Score history sparklines in UI** — score_history.json is saved but 7-day trend
-  sparklines and trend arrows (↑↓→) on stock cards are not yet rendered
 - **Backtesting** — test the method against 1000 days of historical data
 - **VPS migration** — always-on hosting, eliminates Task Scheduler dependency
 - **Portfolio Sandbox** *(parked — open design questions unresolved)*

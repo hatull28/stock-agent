@@ -75,6 +75,7 @@ def append_run(results, run_ts=None):
                 "peter_scores":   r.get("peter_scores", {}),
                 "lynch_category": _lynch_category(r),
                 "held":           r.get("_held", False),
+                "source":         r.get("_source"),
                 "action":         verdict.get("action"),
             }
             f.write(json.dumps(entry, ensure_ascii=False, default=_json_default) + "\n")

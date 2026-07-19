@@ -93,11 +93,19 @@ if __name__ == "__main__":
     run_ts = _now.strftime("%Y-%m-%dT%H:%M:%SZ")
     _today = _now.strftime("%Y-%m-%d")
 
-    # Tag held status before ledger write so research_data.json records provenance.
+    # Tag held + source before ledger write.
+    # held  — simple boolean: did I own this at prediction time?
+    # source — finer-grained: where did this ticker come from?
+    # Both are preserved; they answer different forward-test questions.
     for r in results["portfolio"]:
-        r["_held"] = True
-    for r in results["watchlist"] + results["suggestions"]:
-        r["_held"] = False
+        r["_held"]   = True
+        r["_source"] = "portfolio"
+    for r in results["watchlist"]:
+        r["_held"]   = False
+        r["_source"] = "watchlist"
+    for r in results["suggestions"]:
+        r["_held"]   = False
+        r["_source"] = "suggestion"
 
     _all_results = results["portfolio"] + results["watchlist"] + results["suggestions"]
     _scores = {r["ticker"]: r["micha_score"] for r in _all_results}
@@ -139,7 +147,8 @@ if __name__ == "__main__":
 
     # === send summary to Discord ===
     from discord_sender import send_briefing
-    ok = send_briefing(results["portfolio"], results["suggestions"], run_ts=run_ts)
+    ok = send_briefing(results["portfolio"], results["suggestions"],
+                       watchlist_results=results["watchlist"], run_ts=run_ts)
     print("Sent to Discord!" if ok else "Discord send failed.")
 
     # === push report to git ===
