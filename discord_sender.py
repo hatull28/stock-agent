@@ -47,6 +47,20 @@ _ACTION_SHORT = {
 }
 
 
+def compute_run_digest(results):
+    """SHA-256 fingerprint of sorted ticker:profile_hash pairs, first 12 hex chars.
+
+    This is the canonical digest function — the exact bytes that end up in the
+    Discord embed footer. Import and call this (do not reimplement) in any tool
+    that verifies the ledger against the witness.
+    """
+    digest_src = "|".join(
+        f"{r['ticker']}:{r.get('profile_hash', '')}"
+        for r in sorted(results, key=lambda x: x["ticker"])
+    )
+    return hashlib.sha256(digest_src.encode()).hexdigest()[:12]
+
+
 def send_briefing(portfolio_results, suggestions, report_url=None, run_ts=None):
     """Send the daily briefing as a rich Discord embed.
 
@@ -96,14 +110,9 @@ def send_briefing(portfolio_results, suggestions, report_url=None, run_ts=None):
         )
     suggestion_text = "\n".join(suggestion_lines)
 
-    # run digest — SHA-256 of sorted ticker:hash pairs, first 12 hex chars.
-    # provides an external tamper-evident fingerprint for this run's predictions.
-    all_results = portfolio_results + suggestions
-    _digest_src = "|".join(
-        f"{r['ticker']}:{r.get('profile_hash', '')}"
-        for r in sorted(all_results, key=lambda x: x["ticker"])
-    )
-    run_digest = hashlib.sha256(_digest_src.encode()).hexdigest()[:12]
+    # run digest — fingerprints portfolio + suggestions (the set this function receives).
+    # watchlist is not passed here and therefore not covered by the digest.
+    run_digest = compute_run_digest(portfolio_results + suggestions)
 
     from datetime import datetime, timezone
     _ts = run_ts or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
